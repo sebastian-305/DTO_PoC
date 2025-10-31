@@ -38,5 +38,20 @@ public class CountrySchemaProviderTests
 
         properties["sprachen"]!["type"]!.GetValue<string>().Should().Be("array");
         properties["sprachen"]!["items"]!.AsObject()["type"]!.GetValue<string>().Should().Be("string");
+
+        var einwohner = properties["einwohner"]!.AsObject();
+        einwohner["type"]!.GetValue<string>().Should().Be("object");
+        einwohner["additionalProperties"]!.GetValue<bool>().Should().BeFalse();
+
+        var einwohnerRequired = einwohner["required"]!
+            .AsArray()
+            .Select(node => node!.GetValue<string>())
+            .ToArray();
+        einwohnerRequired.Should().BeEquivalentTo(new[] { "anzahl" });
+
+        var einwohnerProperties = einwohner["properties"]!.AsObject();
+        einwohnerProperties.Should().ContainKeys("anzahl", "hinweis");
+        einwohnerProperties["anzahl"]!["type"]!.GetValue<string>().Should().Be("number");
+        einwohnerProperties["hinweis"]!["type"]!.GetValue<string>().Should().Be("string");
     }
 }
