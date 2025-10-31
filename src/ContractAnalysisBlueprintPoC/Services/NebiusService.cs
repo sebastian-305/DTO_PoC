@@ -8,7 +8,7 @@ using OpenAI.Chat;
 
 namespace ContractAnalysisBlueprintPoC.Services;
 
-public sealed class NebiusService
+public sealed class NebiusService : INebiusService
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(4);
 
