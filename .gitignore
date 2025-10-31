@@ -1,0 +1,63 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio files
+.vs/
+*.user
+*.rsuser
+*.suo
+*.cache
+*.projdata
+*.pidb
+*.svclog
+*.ide/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Rider
+.idea/
+*.sln.iml
+
+# DotCover
+*.dotCover
+
+# NuGet packages
+*.nupkg
+# packages directory can be ignored in repositories that use packages.config
+**/packages/*
+!**/packages/build/
+!**/packages/repositories.config
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test results
+TestResult*
+*.VisualState.xml
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# ReSharper
+_ReSharper*/
+*.DotSettings.user
+
+# Azure Functions local settings
+local.settings.json
+
+# Coverage reports
+coverage/
+*.coverage
+*.coveragexml
+
+# Other
+node_modules/
