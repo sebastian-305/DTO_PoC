@@ -15,7 +15,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.Configure<NebiusOptions>(builder.Configuration.GetSection("Nebius"));
 builder.Services.AddSingleton<CountrySchemaProvider>();
-builder.Services.AddSingleton<NebiusService>();
+builder.Services.AddSingleton<INebiusService, NebiusService>();
 
 var app = builder.Build();
 
@@ -31,7 +31,7 @@ api.MapGet("/schema", (CountrySchemaProvider provider) =>
 
 api.MapPost("/analyze", async (
         CountryAnalysisRequest request,
-        NebiusService nebiusService,
+        INebiusService nebiusService,
         CancellationToken cancellationToken) =>
     {
         if (request is null || string.IsNullOrWhiteSpace(request.Country))
@@ -52,10 +52,17 @@ api.MapPost("/analyze", async (
         }
         catch (ClientResultException ex)
         {
+            var rawResponse = ex.GetRawResponse();
+            var status = rawResponse?.Status ?? 502;
+            var upstreamBody = rawResponse?.Content?.ToString();
+            var detail = string.IsNullOrWhiteSpace(upstreamBody)
+                ? ex.Message
+                : string.Concat(ex.Message, Environment.NewLine, upstreamBody);
+
             return Results.Problem(
                 title: "Nebius API Fehler",
-                detail: ex.Message,
-                statusCode: 502);
+                detail: detail,
+                statusCode: status);
         }
         catch (Exception ex)
         {

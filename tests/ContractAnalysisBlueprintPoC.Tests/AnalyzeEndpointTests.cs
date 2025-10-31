@@ -1,0 +1,105 @@
+using System.ClientModel;
+using System.ClientModel.Primitives;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json.Nodes;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ContractAnalysisBlueprintPoC.Services;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace ContractAnalysisBlueprintPoC.Tests;
+
+public class AnalyzeEndpointTests
+{
+    [Fact]
+    public async Task Analyze_WhenNebiusReturnsClientError_PropagatesStatus()
+    {
+        const int expectedStatus = 400;
+        const string upstreamBody = "{\"error\":\"invalid\"}";
+
+        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.AddSingleton<INebiusService>(new ThrowingNebiusService(expectedStatus, upstreamBody));
+            });
+        });
+
+        using var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/analyze", new { country = "Testland" });
+
+        response.StatusCode.Should().Be((HttpStatusCode)expectedStatus);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Status.Should().Be(expectedStatus);
+        problem.Detail.Should().Contain(upstreamBody);
+    }
+
+    private sealed class ThrowingNebiusService(int status, string body) : INebiusService
+    {
+        public Task<JsonObject> GetCountryInformationAsync(string country, CancellationToken cancellationToken = default)
+        {
+            throw new ClientResultException(
+                message: "Nebius request failed.",
+                response: new FakePipelineResponse(status, body));
+        }
+    }
+
+    private sealed class FakePipelineResponse : PipelineResponse
+    {
+        private readonly PipelineResponseHeaders _headers = new FakeHeaders();
+        private readonly BinaryData _content;
+        private readonly int _status;
+
+        public FakePipelineResponse(int status, string body)
+        {
+            _status = status;
+            _content = BinaryData.FromString(body);
+        }
+
+        public override int Status => _status;
+
+        public override string ReasonPhrase => string.Empty;
+
+        protected override PipelineResponseHeaders HeadersCore => _headers;
+
+        public override Stream? ContentStream { get; set; }
+
+        public override BinaryData Content => _content;
+
+        public override BinaryData BufferContent(CancellationToken cancellationToken = default) => _content;
+
+        public override ValueTask<BinaryData> BufferContentAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(_content);
+
+        public override void Dispose()
+        {
+        }
+    }
+
+    private sealed class FakeHeaders : PipelineResponseHeaders
+    {
+        public override bool TryGetValue(string name, out string? value)
+        {
+            value = null;
+            return false;
+        }
+
+        public override bool TryGetValues(string name, out IEnumerable<string>? values)
+        {
+            values = null;
+            return false;
+        }
+
+        public override IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+            => Enumerable.Empty<KeyValuePair<string, string>>().GetEnumerator();
+    }
+}
