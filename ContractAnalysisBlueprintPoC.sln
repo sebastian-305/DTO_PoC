@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContractAnalysisBlueprintPoC", "src/ContractAnalysisBlueprintPoC/ContractAnalysisBlueprintPoC.csproj", "{37FAD571-C23D-49E7-9ED0-F12F7E86E6FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContractAnalysisBlueprintPoC.Tests", "tests/ContractAnalysisBlueprintPoC.Tests/ContractAnalysisBlueprintPoC.Tests.csproj", "{59C8755B-C4D1-488E-91B3-7D0402FAF38A}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Release|Any CPU = Release|Any CPU
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {37FAD571-C23D-49E7-9ED0-F12F7E86E6FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {37FAD571-C23D-49E7-9ED0-F12F7E86E6FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {37FAD571-C23D-49E7-9ED0-F12F7E86E6FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {37FAD571-C23D-49E7-9ED0-F12F7E86E6FE}.Release|Any CPU.Build.0 = Release|Any CPU
+        {59C8755B-C4D1-488E-91B3-7D0402FAF38A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {59C8755B-C4D1-488E-91B3-7D0402FAF38A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {59C8755B-C4D1-488E-91B3-7D0402FAF38A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {59C8755B-C4D1-488E-91B3-7D0402FAF38A}.Release|Any CPU.Build.0 = Release|Any CPU
+    EndGlobalSection
+    GlobalSection(SolutionProperties) = preSolution
+        HideSolutionNode = FALSE
+    EndGlobalSection
+EndGlobal
