@@ -2,6 +2,7 @@ using System.ClientModel;
 using System.Text;
 using System.Text.Json;
 using ContractAnalysisBlueprintPoC.Blueprints;
+using ContractAnalysisBlueprintPoC.Models;
 using ContractAnalysisBlueprintPoC.Schema;
 using Microsoft.Extensions.Logging;
 using OpenAI;
