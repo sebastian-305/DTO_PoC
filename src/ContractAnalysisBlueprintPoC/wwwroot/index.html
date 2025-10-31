@@ -1,43 +1,30 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Contract Analysis Blueprint PoC</title>
-    <link rel="stylesheet" href="styles.css" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Länderanalyse</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <main class="container">
-        <header>
-            <h1>Contract Analysis Blueprint PoC</h1>
-            <p>Demonstration eines gemeinsamen Analyse-Blueprints für Backend, JSON-Schema und Frontend.</p>
-        </header>
-        <section class="controls">
-            <label for="blueprint-select">Blueprint auswählen</label>
-            <select id="blueprint-select"></select>
-            <div class="control-buttons">
-                <button id="reload-data" type="button">Daten neu laden</button>
-                <button id="show-schema" type="button">Schema anzeigen</button>
-            </div>
+    <main class="app">
+        <section class="form-section">
+            <h1>Länderanalyse</h1>
+            <p>Gib den Namen eines Landes ein und klicke auf <strong>Analyse erzeugen</strong>, um strukturierte Informationen zu erhalten.</p>
+            <form id="analysis-form">
+                <label for="country-input" class="visually-hidden">Land</label>
+                <input id="country-input" name="country" type="text" placeholder="z.&nbsp;B. Österreich" autocomplete="off" required>
+                <button type="submit">Analyse erzeugen</button>
+            </form>
+            <p class="schema-hint">Das aktuelle Schema enthält die Felder Hauptstadt, Einwohner, Fläche, Sprachen und Kontinent.</p>
         </section>
-        <section id="message" class="message" hidden></section>
-        <section id="summary" class="card">
-            <h2>Zusammenfassung</h2>
-            <div class="summary-content"></div>
-        </section>
-        <section id="sections" class="card">
-            <h2>Abschnitte</h2>
-            <div class="section-content"></div>
-        </section>
-        <section id="conclusion" class="card">
+
+        <section class="result-section" aria-live="polite">
             <h2>Ergebnis</h2>
-            <div class="conclusion-content"></div>
+            <pre id="result-output" class="result-output">Noch keine Analyse vorhanden.</pre>
         </section>
-        <details id="schema-panel" class="card" hidden>
-            <summary>JSON-Schema</summary>
-            <pre id="schema-json"></pre>
-        </details>
     </main>
+
     <script src="app.js" type="module"></script>
 </body>
 </html>

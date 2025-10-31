@@ -1,22 +1,21 @@
+using System.ClientModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.ClientModel;
-using ContractAnalysisBlueprintPoC.Blueprints;
 using ContractAnalysisBlueprintPoC.Models;
-using ContractAnalysisBlueprintPoC.Schema;
 using ContractAnalysisBlueprintPoC.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<AnalysisBlueprintRegistry>();
-builder.Services.AddSingleton<SampleResultProvider>();
-builder.Services.AddSingleton<NebiusService>();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.SerializerOptions.WriteIndented = true;
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
+builder.Services.Configure<NebiusOptions>(builder.Configuration.GetSection("Nebius"));
+builder.Services.AddSingleton<CountrySchemaProvider>();
+builder.Services.AddSingleton<NebiusService>();
 
 var app = builder.Build();
 
@@ -25,44 +24,31 @@ app.UseStaticFiles();
 
 var api = app.MapGroup("/api");
 
-api.MapGet("/blueprints", (AnalysisBlueprintRegistry registry) =>
-    registry.GetAll().Select(bp => new
-    {
-        bp.Id,
-        bp.DisplayName,
-        SummaryFieldCount = bp.SummaryFields.Count,
-        SectionCount = bp.Sections.Count
-    }));
-
-api.MapGet("/blueprints/{id}", (string id, AnalysisBlueprintRegistry registry) =>
-    registry.GetById(id));
-
-api.MapGet("/blueprints/{id}/schema", (string id, AnalysisBlueprintRegistry registry) =>
+api.MapGet("/schema", (CountrySchemaProvider provider) =>
 {
-    var blueprint = registry.GetById(id);
-    return SchemaBuilder.BuildResultSchema(blueprint);
+    return Results.Json(provider.GetSchema());
 });
 
-api.MapGet("/samples/{id}", (string id, SampleResultProvider provider) =>
-    provider.GetSample(id));
-
-api.MapPost("/blueprints/{id}/analysis", async (
-        string id,
-        AnalysisRequest request,
-        AnalysisBlueprintRegistry registry,
+api.MapPost("/analyze", async (
+        CountryAnalysisRequest request,
         NebiusService nebiusService,
         CancellationToken cancellationToken) =>
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.ContractText))
+        if (request is null || string.IsNullOrWhiteSpace(request.Country))
         {
-            return Results.BadRequest(new { message = "Der Vertragstext darf nicht leer sein." });
+            return Results.BadRequest(new { message = "Bitte gib den Namen eines Landes an." });
         }
 
-        var blueprint = registry.GetById(id);
         try
         {
-            var result = await nebiusService.AnalyzeAsync(blueprint, request.ContractText, cancellationToken);
-            return Results.Ok(result);
+            var data = await nebiusService.GetCountryInformationAsync(request.Country, cancellationToken);
+            var response = new CountryAnalysisResponse
+            {
+                Country = request.Country,
+                Data = data
+            };
+
+            return Results.Ok(response);
         }
         catch (ClientResultException ex)
         {
