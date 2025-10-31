@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.ClientModel;
 using ContractAnalysisBlueprintPoC.Blueprints;
+using ContractAnalysisBlueprintPoC.Models;
 using ContractAnalysisBlueprintPoC.Schema;
 using ContractAnalysisBlueprintPoC.Services;
 
@@ -8,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<AnalysisBlueprintRegistry>();
 builder.Services.AddSingleton<SampleResultProvider>();
+builder.Services.AddSingleton<NebiusService>();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -42,6 +45,40 @@ api.MapGet("/blueprints/{id}/schema", (string id, AnalysisBlueprintRegistry regi
 
 api.MapGet("/samples/{id}", (string id, SampleResultProvider provider) =>
     provider.GetSample(id));
+
+api.MapPost("/blueprints/{id}/analysis", async (
+        string id,
+        AnalysisRequest request,
+        AnalysisBlueprintRegistry registry,
+        NebiusService nebiusService,
+        CancellationToken cancellationToken) =>
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.ContractText))
+        {
+            return Results.BadRequest(new { message = "Der Vertragstext darf nicht leer sein." });
+        }
+
+        var blueprint = registry.GetById(id);
+        try
+        {
+            var result = await nebiusService.AnalyzeAsync(blueprint, request.ContractText, cancellationToken);
+            return Results.Ok(result);
+        }
+        catch (ClientResultException ex)
+        {
+            return Results.Problem(
+                title: "Nebius API Fehler",
+                detail: ex.Message,
+                statusCode: 502);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                title: "Analyse fehlgeschlagen",
+                detail: ex.Message,
+                statusCode: 500);
+        }
+    });
 
 app.MapFallbackToFile("index.html");
 
