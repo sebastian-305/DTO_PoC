@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json.Nodes;
 using ContractAnalysisBlueprintPoC.Services;
 using FluentAssertions;

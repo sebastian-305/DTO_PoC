@@ -28,11 +28,13 @@ public sealed class NebiusService : INebiusService
         _client = new ChatClient(
             model: options.Model,
             credential: new ApiKeyCredential(options.ApiKey),
-            new OpenAIClientOptions
+            options: new OpenAIClientOptions()
             {
                 Endpoint = options.Endpoint,
                 NetworkTimeout = TimeSpan.FromMinutes(10)
             });
+        _logger.LogDebug("Endpoint:");
+        _logger.LogDebug(options.Endpoint.ToString());
     }
 
     public async Task<JsonObject> GetCountryInformationAsync(string country, CancellationToken cancellationToken = default)
@@ -45,18 +47,23 @@ public sealed class NebiusService : INebiusService
         var schema = _schemaProvider.GetSchema();
         var schemaData = BinaryData.FromString(schema.ToJsonString());
 
-        var messages = new[]
+        var messages = new ChatMessage[]
         {
-            ChatMessage.CreateSystemMessage("Du bist ein zuverlässiger Geograf und musst streng das geforderte JSON-Schema einhalten."),
-            ChatMessage.CreateUserMessage($"Analysiere das Land '{country}'. Liefere ausschließlich Fakten im JSON-Format.")
+    ChatMessage.CreateSystemMessage(
+        "Du bist ein zuverlässiger Geograf. Halte dich strikt an das geforderte JSON-Schema."
+    ),
+    ChatMessage.CreateUserMessage(
+        $"Analysiere das Land \"{country}\" und liefere ausschließlich Fakten im JSON-Format."
+    )
         };
+
 
         var options = new ChatCompletionOptions
         {
-            ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-                jsonSchemaFormatName: "country_information",
-                jsonSchema: schemaData,
-                jsonSchemaIsStrict: true),
+            //ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+            //    jsonSchemaFormatName: "country_information",
+            //    jsonSchema: schemaData,
+            //    jsonSchemaIsStrict: true),
             Temperature = 0f,
             TopP = 0.1f,
             MaxOutputTokenCount = 800
@@ -67,11 +74,13 @@ public sealed class NebiusService : INebiusService
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             linkedCts.CancelAfter(RequestTimeout);
-            completion = await _client.CompleteChatAsync(messages, options, linkedCts.Token).ConfigureAwait(false);
+            return new JsonObject();
+            completion = await _client.CompleteChatAsync(messages, options, linkedCts.Token);
         }
         catch (ClientResultException ex)
         {
             var response = ex.GetRawResponse();
+            _logger.LogError(ex.Message);
             var body = response?.Content?.ToString() ?? "(no body)";
             _logger.LogError(ex, "Nebius API error: {Status} {Body}", response?.Status, body);
             throw;
@@ -132,4 +141,7 @@ public sealed class NebiusService : INebiusService
 
         return withoutFence.Trim();
     }
+
+
+
 }
