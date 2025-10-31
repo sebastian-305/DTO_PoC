@@ -1,22 +1,29 @@
-# ContractAnalysisBlueprintPoC
+# Länderanalyse mit Nebius
 
-ContractAnalysisBlueprintPoC demonstriert, wie ein gemeinsamer Analyse-Blueprint gleichzeitig das Backend, die JSON-Schema-Generierung sowie das Frontend eines Vertrags-Analyse-Tools versorgt. Arbeits- und Mietverträge greifen auf dieselbe Struktur zu, sodass Änderungen an Feldern nur noch an einer Stelle gepflegt werden müssen.
+Diese Anwendung demonstriert eine minimalistische End-to-End-Integration zwischen einer .NET-Minimal-API, einem schlanken JavaScript-Frontend und der Nebius-API für Structured Outputs. Nutzer:innen geben lediglich den Namen eines Landes ein und erhalten strukturierte Informationen zur Hauptstadt, Einwohnerzahl, Fläche, Sprachen und zum Kontinent zurück.
 
-## Projektaufbau
+## Architekturüberblick
 
-- **Backend (.NET 8 Minimal API)** liefert Blueprint-Metadaten, JSON-Schemata und Beispielergebnisse aus einer Registry.
-- **SchemaBuilder** generiert JSON-Schemata gemäß Draft 2020-12 direkt aus dem Blueprint.
-- **Frontend (Vanilla JS)** rendert Summary, Abschnittskarten und Fazit dynamisch anhand der Blueprint-Definition und der gelieferten Beispieldaten.
-- **Tests (xUnit)** prüfen die Schema-Generierung.
+- **Backend (.NET 8 Minimal API)**
+  - Endpunkt `POST /api/analyze` nimmt den Ländernamen entgegen und beauftragt die Nebius-API mit einer Analyse.
+  - Endpunkt `GET /api/schema` stellt das aktuell verwendete JSON-Schema bereit.
+  - Das Schema lässt sich zentral in `CountrySchemaProvider` anpassen und wird für den Structured-Output-Call verwendet.
+- **Frontend (Vanilla JS)**
+  - Ein Textfeld und der Button „Analyse erzeugen“ senden den Ländernamen an das Backend.
+  - Die Antwort wird formatiert als JSON angezeigt.
 
-## Starten der Anwendung
+## Projekt lokal starten
 
-1. Abhängigkeiten wiederherstellen und Web-App starten:
+1. API-Key und Modell der Nebius-API als Umgebungsvariablen setzen (oder in `appsettings.json` hinterlegen):
+   ```bash
+   export Nebius__ApiKey="<dein-api-key>"
+   export Nebius__Model="<dein-modell>"
+   ```
+2. Anwendung aus dem Projektverzeichnis starten:
    ```bash
    dotnet run --project src/ContractAnalysisBlueprintPoC/ContractAnalysisBlueprintPoC.csproj
    ```
-2. Die Oberfläche ist anschließend unter `http://localhost:5000` (oder dem in der Konsole angezeigten Port) erreichbar.
-3. Über das Dropdown lässt sich zwischen Arbeits- und Mietvertrag wechseln. Buttons laden Beispieldaten neu oder zeigen das Schema des aktuellen Blueprints an.
+3. Das Frontend ist anschließend unter `http://localhost:5000` (oder dem ausgegebenen Port) erreichbar.
 
 ## Tests ausführen
 
@@ -24,6 +31,6 @@ ContractAnalysisBlueprintPoC demonstriert, wie ein gemeinsamer Analyse-Blueprint
 dotnet test
 ```
 
-## Funktionsweise des SchemaBuilder
+## Schema anpassen
 
-`SchemaBuilder.BuildResultSchema` baut das Ergebnis-Schema ausschließlich aus den Blueprint-Daten auf. Summary-Felder und Abschnittsstrukturen werden mitsamt Typen, Beschreibungen und Required-Listen übernommen. Dadurch bleibt Schema, DTO und Frontend automatisch konsistent, sobald der Blueprint erweitert wird.
+Das verwendete Structured-Output-Schema liegt in `CountrySchemaProvider`. Änderungen an dieser Klasse werden automatisch beim nächsten API-Aufruf berücksichtigt. So lassen sich zusätzliche Felder hinzufügen oder bestehende Beschreibungen anpassen, ohne das Frontend ändern zu müssen.
