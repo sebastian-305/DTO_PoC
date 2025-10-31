@@ -1,0 +1,175 @@
+:root {
+    --background: #f5f7fb;
+    --card-background: #ffffff;
+    --text-color: #1a1a1a;
+    --accent: #2a6ef2;
+    --border-color: #d5d9e2;
+    --shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
+    --max-width: 960px;
+    --spacing: 1rem;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: calc(var(--spacing) * 2) var(--spacing) calc(var(--spacing) * 3);
+}
+
+header h1 {
+    margin-bottom: 0.25rem;
+}
+
+header p {
+    margin-top: 0;
+    color: #475569;
+}
+
+.controls {
+    display: grid;
+    gap: 0.5rem;
+    margin: calc(var(--spacing) * 1.5) 0;
+}
+
+.controls label {
+    font-weight: 600;
+}
+
+.controls select,
+.controls button {
+    padding: 0.65rem;
+    font-size: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: #fff;
+}
+
+.controls button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.controls button:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+.control-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: var(--card-background);
+    border-radius: 1rem;
+    padding: var(--spacing);
+    margin-bottom: calc(var(--spacing) * 1.5);
+    box-shadow: var(--shadow);
+}
+
+.card h2,
+.card summary {
+    margin-top: 0;
+}
+
+.message {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(42, 110, 242, 0.1);
+    color: #1e3a8a;
+    margin-bottom: calc(var(--spacing) * 1.5);
+}
+
+.message.error {
+    background: rgba(220, 38, 38, 0.15);
+    color: #991b1b;
+}
+
+#summary dl {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 2fr);
+    gap: 0.5rem 1rem;
+}
+
+#summary dt {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+#summary dd {
+    margin: 0;
+}
+
+.section-card + .section-card {
+    margin-top: var(--spacing);
+}
+
+.section-item {
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    background: #f9fbff;
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 2fr);
+    gap: 0.25rem 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.field-row:last-child {
+    margin-bottom: 0;
+}
+
+.field-label {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.value-list {
+    padding-left: 1.25rem;
+    margin: 0.25rem 0;
+}
+
+.empty-hint {
+    color: #64748b;
+    font-style: italic;
+}
+
+#schema-json {
+    white-space: pre-wrap;
+    font-family: "Fira Code", "SFMono-Regular", ui-monospace, monospace;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    overflow: auto;
+}
+
+@media (max-width: 720px) {
+    #summary dl,
+    .field-row {
+        grid-template-columns: 1fr;
+    }
+
+    .control-buttons {
+        flex-direction: column;
+    }
+}
