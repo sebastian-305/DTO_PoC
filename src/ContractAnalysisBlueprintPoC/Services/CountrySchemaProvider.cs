@@ -15,26 +15,6 @@ public sealed class CountrySchemaProvider
                 ["type"] = "string",
                 ["description"] = "Die Hauptstadt des Landes."
             },
-            ["einwohner"] = new JsonObject
-            {
-                ["type"] = "object",
-                ["description"] = "Anzahl der Einwohner mit optionalen Angaben zu Quelle oder Bezugszeitraum.",
-                ["additionalProperties"] = false,
-                ["properties"] = new JsonObject
-                {
-                    ["anzahl"] = new JsonObject
-                    {
-                        ["type"] = "number",
-                        ["description"] = "Absolute Einwohnerzahl als Zahl."
-                    },
-                    ["hinweis"] = new JsonObject
-                    {
-                        ["type"] = "string",
-                        ["description"] = "Optionale textuelle Hinweise wie Quelle oder Jahr."
-                    }
-                },
-                ["required"] = new JsonArray("anzahl")
-            },
             ["flaeche"] = new JsonObject
             {
                 ["type"] = "string",

@@ -35,6 +35,8 @@ public sealed class NebiusService : INebiusService
             });
         _logger.LogDebug("Endpoint:");
         _logger.LogDebug(options.Endpoint.ToString());
+        _logger.LogDebug(options.Model);
+        _logger.LogDebug(options.ApiKey);
     }
 
     public async Task<JsonObject> GetCountryInformationAsync(string country, CancellationToken cancellationToken = default)
@@ -60,10 +62,10 @@ public sealed class NebiusService : INebiusService
 
         var options = new ChatCompletionOptions
         {
-            //ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-            //    jsonSchemaFormatName: "country_information",
-            //    jsonSchema: schemaData,
-            //    jsonSchemaIsStrict: true),
+            ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+                jsonSchemaFormatName: "country_information",
+                jsonSchema: schemaData,
+                jsonSchemaIsStrict: true),
             Temperature = 0f,
             TopP = 0.1f,
             MaxOutputTokenCount = 800
@@ -74,7 +76,6 @@ public sealed class NebiusService : INebiusService
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             linkedCts.CancelAfter(RequestTimeout);
-            return new JsonObject();
             completion = await _client.CompleteChatAsync(messages, options, linkedCts.Token);
         }
         catch (ClientResultException ex)
@@ -102,7 +103,7 @@ public sealed class NebiusService : INebiusService
         {
             throw new InvalidOperationException("Die Nebius-Antwort enthielt keinen Inhalt.");
         }
-
+        _logger.LogDebug(content);
         return ParseJson(content);
     }
 
