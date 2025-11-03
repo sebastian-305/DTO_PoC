@@ -13,12 +13,12 @@ public sealed class NebiusService : INebiusService
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(4);
 
     private readonly ILogger<NebiusService> _logger;
-    private readonly CountrySchemaProvider _schemaProvider;
+    private readonly PersonSchemaProvider _schemaProvider;
     private readonly ChatClient _client;
 
     public NebiusService(
         ILogger<NebiusService> logger,
-        CountrySchemaProvider schemaProvider,
+        PersonSchemaProvider schemaProvider,
         IOptions<NebiusOptions> optionsAccessor)
     {
         _logger = logger;
@@ -39,11 +39,11 @@ public sealed class NebiusService : INebiusService
         _logger.LogDebug(options.ApiKey);
     }
 
-    public async Task<JsonObject> GetCountryInformationAsync(string country, CancellationToken cancellationToken = default)
+    public async Task<JsonObject> GetPersonInformationAsync(string person, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(country))
+        if (string.IsNullOrWhiteSpace(person))
         {
-            throw new ArgumentException("Der Landesname darf nicht leer sein.", nameof(country));
+            throw new ArgumentException("Der Name der Person darf nicht leer sein.", nameof(person));
         }
 
         var schema = _schemaProvider.GetSchema();
@@ -52,12 +52,13 @@ public sealed class NebiusService : INebiusService
         var messages = new ChatMessage[]
         {
             ChatMessage.CreateSystemMessage(
-                "Du bist ein zuverlässiger Geograf. Halte dich strikt an das geforderte JSON-Schema. " +
-                "Der Schlüssel `bildPrompt` soll einen knappen, bildtauglichen Prompt liefern, der Motiv, Stil und Lichtstimmung beschreibt."
+                "Du bist ein gewissenhafter Biograf. Halte dich strikt an das geforderte JSON-Schema. " +
+                "Der Schlüssel `bildPrompt` muss die Person mit Namen, äußeren Merkmalen, typischem Outfit und Stimmung beschreiben, " +
+                "damit ein Bildgenerator die Person authentisch darstellen kann."
             ),
             ChatMessage.CreateUserMessage(
-                $"Analysiere das Land \"{country}\" und liefere ausschließlich Fakten im JSON-Format. " +
-                "Der Eintrag `bildPrompt` soll eine inspirierende Bildbeschreibung für eine Reiseszene enthalten."
+                $"Stelle die berühmte Person \"{person}\" vor und liefere ausschließlich Fakten im JSON-Format. " +
+                "Der Eintrag `bildPrompt` soll die Person mit Namen und charakteristischen Merkmalen beschreiben."
             )
         };
 
@@ -65,7 +66,7 @@ public sealed class NebiusService : INebiusService
         var options = new ChatCompletionOptions
         {
             ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-                jsonSchemaFormatName: "country_information",
+                jsonSchemaFormatName: "person_information",
                 jsonSchema: schemaData,
                 jsonSchemaIsStrict: true),
             Temperature = 0f,
@@ -144,7 +145,4 @@ public sealed class NebiusService : INebiusService
 
         return withoutFence.Trim();
     }
-
-
-
 }

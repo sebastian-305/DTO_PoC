@@ -1,5 +1,5 @@
 const form = document.getElementById('analysis-form');
-const countryInput = document.getElementById('country-input');
+const personInput = document.getElementById('person-input');
 const resultOutput = document.getElementById('result-output');
 const DEFAULT_MESSAGE = 'Noch keine Analyse vorhanden.';
 
@@ -10,9 +10,9 @@ renderMessage(DEFAULT_MESSAGE);
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const country = countryInput.value.trim();
-    if (!country) {
-        showError('Bitte gib den Namen eines Landes an.');
+    const person = personInput.value.trim();
+    if (!person) {
+        showError('Bitte gib den Namen einer berühmten Person an.');
         return;
     }
 
@@ -25,7 +25,7 @@ form.addEventListener('submit', async (event) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ country })
+            body: JSON.stringify({ person })
         });
 
         if (!response.ok) {
