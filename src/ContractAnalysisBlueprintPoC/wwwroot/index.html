@@ -3,20 +3,20 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Länderanalyse</title>
+    <title>Personenanalyse</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <main class="app">
         <section class="form-section">
-            <h1>Länderanalyse</h1>
-            <p>Gib den Namen eines Landes ein und klicke auf <strong>Analyse erzeugen</strong>, um strukturierte Informationen zu erhalten.</p>
+            <h1>Personenanalyse</h1>
+            <p>Gib den Namen einer berühmten Person ein und klicke auf <strong>Analyse erzeugen</strong>, um strukturierte Informationen zu erhalten.</p>
             <form id="analysis-form">
-                <label for="country-input" class="visually-hidden">Land</label>
-                <input id="country-input" name="country" type="text" placeholder="z.&nbsp;B. Österreich" autocomplete="off" required>
+                <label for="person-input" class="visually-hidden">Person</label>
+                <input id="person-input" name="person" type="text" placeholder="z.&nbsp;B. Marie Curie" autocomplete="off" required>
                 <button type="submit">Analyse erzeugen</button>
             </form>
-            <p class="schema-hint">Das aktuelle Schema enthält die Felder Hauptstadt, Einwohner, Fläche, Sprachen, Kontinent und einen Bild-Prompt.</p>
+            <p class="schema-hint">Das aktuelle Schema enthält Eckdaten wie Geburtsdatum, Nationalität, Haupttätigkeit, bekannte Werke, Auszeichnungen, eine Kurzbiografie und einen Bild-Prompt.</p>
         </section>
 
         <section class="result-section" aria-live="polite">

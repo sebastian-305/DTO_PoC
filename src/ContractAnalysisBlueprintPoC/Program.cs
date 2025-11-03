@@ -14,7 +14,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 builder.Services.Configure<NebiusOptions>(builder.Configuration.GetSection("Nebius"));
-builder.Services.AddSingleton<CountrySchemaProvider>();
+builder.Services.AddSingleton<PersonSchemaProvider>();
 builder.Services.AddSingleton<INebiusService, NebiusService>();
 builder.Services.AddSingleton<INebiusImageService, NebiusImageService>();
 
@@ -25,27 +25,27 @@ app.UseStaticFiles();
 
 var api = app.MapGroup("/api");
 
-api.MapGet("/schema", (CountrySchemaProvider provider) =>
+api.MapGet("/schema", (PersonSchemaProvider provider) =>
 {
     return Results.Json(provider.GetSchema());
 });
 
 api.MapPost("/analyze", async (
-        CountryAnalysisRequest request,
+        PersonAnalysisRequest request,
         INebiusService nebiusService,
         CancellationToken cancellationToken) =>
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Country))
+        if (request is null || string.IsNullOrWhiteSpace(request.Person))
         {
-            return Results.BadRequest(new { message = "Bitte gib den Namen eines Landes an." });
+            return Results.BadRequest(new { message = "Bitte gib den Namen einer berühmten Person an." });
         }
 
         try
         {
-            var data = await nebiusService.GetCountryInformationAsync(request.Country, cancellationToken);
-            var response = new CountryAnalysisResponse
+            var data = await nebiusService.GetPersonInformationAsync(request.Person, cancellationToken);
+            var response = new PersonAnalysisResponse
             {
-                Country = request.Country,
+                Person = request.Person,
                 Data = data
             };
 
