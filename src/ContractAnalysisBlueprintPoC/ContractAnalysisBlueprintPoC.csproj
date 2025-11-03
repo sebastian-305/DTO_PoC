@@ -3,6 +3,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>099a60c8-b1b6-404b-9467-58a21e24b278</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="OpenAI" Version="2.5.0" />
