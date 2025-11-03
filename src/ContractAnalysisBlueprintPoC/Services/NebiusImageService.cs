@@ -37,6 +37,7 @@ public sealed class NebiusImageService : INebiusImageService
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", _options.ApiKey);
         }
+        _logger.LogDebug("API Key: {key}", _options.ApiKey);
     }
 
     public async Task<ImageGenerationResult> GenerateImageAsync(string prompt, CancellationToken cancellationToken = default)
@@ -58,7 +59,9 @@ public sealed class NebiusImageService : INebiusImageService
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "images")
         {
-            Content = JsonContent.Create(requestBody, options: SerializerOptions)
+            Content = JsonContent.Create(requestBody, options: SerializerOptions),
+            RequestUri = new Uri("https://api.studio.nebius.com/v1/")
+        
         };
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);

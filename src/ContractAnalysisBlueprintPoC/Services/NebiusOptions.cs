@@ -4,7 +4,7 @@ public sealed class NebiusOptions
 {
     public string Model { get; set; } = "Qwen/Qwen3-30B-A3B";
 
-    public string ImageModel { get; set; } = "stabilityai/stable-diffusion-xl";
+    public string ImageModel { get; set; } = "black-forest-labs/flux-schnell";
 
     public string ApiKey { get; set; } = "";
 
