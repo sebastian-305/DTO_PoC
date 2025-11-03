@@ -3,20 +3,37 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personenanalyse</title>
+    <title>Analyse-Assistent</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <main class="app">
         <section class="form-section">
-            <h1>Personenanalyse</h1>
-            <p>Gib den Namen einer berühmten Person ein und klicke auf <strong>Analyse erzeugen</strong>, um strukturierte Informationen zu erhalten.</p>
+            <h1>Analyse-Assistent</h1>
+            <p>Wähle, ob du eine berühmte Person oder ein Land analysieren möchtest. Der strukturierte Output passt sich automatisch an den Analysetyp an.</p>
             <form id="analysis-form">
-                <label for="person-input" class="visually-hidden">Person</label>
-                <input id="person-input" name="person" type="text" placeholder="z.&nbsp;B. Marie Curie" autocomplete="off" required>
+                <fieldset class="analysis-type">
+                    <legend class="analysis-type__legend">Was möchtest du analysieren?</legend>
+                    <label class="analysis-type__option">
+                        <input type="radio" name="analysis-type" value="person" checked>
+                        <span>
+                            <strong>Berühmte Person</strong>
+                            <small>Biografische Eckdaten, Werke und Bildidee</small>
+                        </span>
+                    </label>
+                    <label class="analysis-type__option">
+                        <input type="radio" name="analysis-type" value="country">
+                        <span>
+                            <strong>Land</strong>
+                            <small>Hauptstadt, Einwohnerzahl, Besonderheiten & Bildidee</small>
+                        </span>
+                    </label>
+                </fieldset>
+                <label for="query-input" class="visually-hidden">Suchbegriff</label>
+                <input id="query-input" name="query" type="text" placeholder="z.&nbsp;B. Marie Curie" autocomplete="off" required>
                 <button type="submit">Analyse erzeugen</button>
             </form>
-            <p class="schema-hint">Das aktuelle Schema enthält Eckdaten wie Geburtsdatum, Nationalität, Haupttätigkeit, bekannte Werke, Auszeichnungen, eine Kurzbiografie und einen Bild-Prompt.</p>
+            <p class="schema-hint" id="schema-hint">Das Schema liefert biografische Daten inklusive Kurzbiografie und Bild-Prompt.</p>
         </section>
 
         <section class="result-section" aria-live="polite">

@@ -32,28 +32,26 @@ public class CountrySchemaProviderTests
         schema["additionalProperties"]!.GetValue<bool>().Should().BeFalse();
 
         var required = schema["required"]!.AsArray().Select(node => node!.GetValue<string>()).ToArray();
-        required.Should().BeEquivalentTo(new[] { "hauptstadt", "einwohner", "flaeche", "sprachen", "kontinent", "bildPrompt" });
+        required.Should().BeEquivalentTo(new[]
+        {
+            "name",
+            "hauptstadt",
+            "einwohnerzahl",
+            "flaeche",
+            "amtssprachen",
+            "kontinent",
+            "kurzbeschreibung",
+            "bildPrompt"
+        });
 
         var properties = schema["properties"]!.AsObject();
-        properties.Should().ContainKeys(required);
+        properties.Should().ContainKeys(required.Append("staatsform"));
 
-        properties["sprachen"]!["type"]!.GetValue<string>().Should().Be("array");
-        properties["sprachen"]!["items"]!.AsObject()["type"]!.GetValue<string>().Should().Be("string");
+        properties["amtssprachen"]!["type"]!.GetValue<string>().Should().Be("array");
+        properties["amtssprachen"]!["items"]!.AsObject()["type"]!.GetValue<string>().Should().Be("string");
 
-        var einwohner = properties["einwohner"]!.AsObject();
-        einwohner["type"]!.GetValue<string>().Should().Be("object");
-        einwohner["additionalProperties"]!.GetValue<bool>().Should().BeFalse();
-
-        var einwohnerRequired = einwohner["required"]!
-            .AsArray()
-            .Select(node => node!.GetValue<string>())
-            .ToArray();
-        einwohnerRequired.Should().BeEquivalentTo(new[] { "anzahl" });
-
-        var einwohnerProperties = einwohner["properties"]!.AsObject();
-        einwohnerProperties.Should().ContainKeys("anzahl", "hinweis");
-        einwohnerProperties["anzahl"]!["type"]!.GetValue<string>().Should().Be("number");
-        einwohnerProperties["hinweis"]!["type"]!.GetValue<string>().Should().Be("string");
+        properties["einwohnerzahl"]!["type"]!.GetValue<string>().Should().Be("string");
+        properties["flaeche"]!["type"]!.GetValue<string>().Should().Be("string");
 
         var bildPrompt = properties["bildPrompt"]!.AsObject();
         bildPrompt["type"]!.GetValue<string>().Should().Be("string");

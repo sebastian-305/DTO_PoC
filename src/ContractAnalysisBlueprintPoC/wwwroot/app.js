@@ -1,23 +1,65 @@
 const form = document.getElementById('analysis-form');
-const personInput = document.getElementById('person-input');
+const typeInputs = Array.from(form.querySelectorAll('input[name="analysis-type"]'));
+const queryInput = document.getElementById('query-input');
+const queryLabel = form.querySelector('label[for="query-input"]');
 const resultOutput = document.getElementById('result-output');
-const DEFAULT_MESSAGE = 'Noch keine Analyse vorhanden.';
+const schemaHint = document.getElementById('schema-hint');
+
+const PLACEHOLDER = {
+    person: 'z.\u00a0B. Marie Curie',
+    country: 'z.\u00a0B. Portugal'
+};
+
+const HINTS = {
+    person: 'Das Schema liefert biografische Daten inklusive Kurzbiografie, Auszeichnungen, Werken und Bild-Prompt.',
+    country: 'Das Schema liefert Fakten zu Hauptstadt, Einwohnerzahl, Amtssprachen, Staatsform, Kurzbeschreibung und Bild-Prompt.'
+};
+
+const LABELS = {
+    person: 'Berühmte Person',
+    country: 'Land'
+};
+
+const EMPTY_MESSAGES = {
+    person: 'Bitte gib den Namen einer berühmten Person an.',
+    country: 'Bitte gib den Namen eines Landes an.'
+};
 
 let currentImageAbortController = null;
+let currentType = getSelectedType();
 
-renderMessage(DEFAULT_MESSAGE);
+renderMessage('Noch keine Analyse vorhanden.');
+updateFormForType(currentType);
+
+typeInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+        if (input.checked) {
+            currentType = input.value;
+            updateFormForType(currentType);
+            cancelImageRequest();
+            renderMessage('Noch keine Analyse vorhanden.');
+        }
+    });
+});
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const person = personInput.value.trim();
-    if (!person) {
-        showError('Bitte gib den Namen einer berühmten Person an.');
+    const query = queryInput.value.trim();
+    if (!query) {
+        showError(EMPTY_MESSAGES[currentType]);
         return;
     }
 
     cancelImageRequest();
     setLoadingState(true);
+
+    const payload = { type: currentType };
+    if (currentType === 'person') {
+        payload.person = query;
+    } else {
+        payload.country = query;
+    }
 
     try {
         const response = await fetch('/api/analyze', {
@@ -25,12 +67,13 @@ form.addEventListener('submit', async (event) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ person })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ detail: 'Unbekannter Fehler.' }));
-            showError(error.detail || error.message || 'Analyse konnte nicht durchgeführt werden.');
+            const detail = error.detail || error.message;
+            showError(detail || EMPTY_MESSAGES[currentType]);
             return;
         }
 
@@ -44,6 +87,19 @@ form.addEventListener('submit', async (event) => {
     }
 });
 
+function getSelectedType() {
+    const selected = typeInputs.find((input) => input.checked);
+    return selected ? selected.value : 'person';
+}
+
+function updateFormForType(type) {
+    queryInput.placeholder = PLACEHOLDER[type];
+    schemaHint.textContent = HINTS[type];
+    if (queryLabel) {
+        queryLabel.textContent = LABELS[type];
+    }
+}
+
 function cancelImageRequest() {
     if (currentImageAbortController) {
         currentImageAbortController.abort();
@@ -55,7 +111,12 @@ function renderResult(result) {
     resultOutput.classList.remove('result-output--message', 'result-output--error');
     resultOutput.innerHTML = '';
 
-    const content = createNodeFromData(result);
+    const meta = document.createElement('p');
+    meta.className = 'result-meta';
+    meta.textContent = `Typ: ${formatType(result?.type)} – Anfrage: ${result?.query ?? 'unbekannt'}`;
+    resultOutput.appendChild(meta);
+
+    const content = createNodeFromData(result?.data ?? result);
     resultOutput.appendChild(content);
 
     const prompt = result?.data?.bildPrompt;
@@ -74,6 +135,13 @@ function renderResult(result) {
                 renderImageError(nodes, error);
             });
     }
+}
+
+function formatType(type) {
+    if (typeof type === 'string' && type.toLowerCase() === 'country') {
+        return 'Land';
+    }
+    return 'Person';
 }
 
 function triggerImageGeneration(prompt, nodes, controller) {

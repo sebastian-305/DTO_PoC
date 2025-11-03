@@ -15,6 +15,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.Configure<NebiusOptions>(builder.Configuration.GetSection("Nebius"));
 builder.Services.AddSingleton<PersonSchemaProvider>();
+builder.Services.AddSingleton<CountrySchemaProvider>();
 builder.Services.AddSingleton<INebiusService, NebiusService>();
 builder.Services.AddSingleton<INebiusImageService, NebiusImageService>();
 
@@ -25,31 +26,36 @@ app.UseStaticFiles();
 
 var api = app.MapGroup("/api");
 
-api.MapGet("/schema", (PersonSchemaProvider provider) =>
-{
-    return Results.Json(provider.GetSchema());
-});
+api.MapGet("/schema", (AnalysisType? type, PersonSchemaProvider personProvider, CountrySchemaProvider countryProvider) =>
+    {
+        var target = type ?? AnalysisType.Person;
+        var schema = target == AnalysisType.Country
+            ? countryProvider.GetSchema()
+            : personProvider.GetSchema();
+
+        return Results.Json(schema);
+    });
 
 api.MapPost("/analyze", async (
-        PersonAnalysisRequest request,
+        AnalysisRequest request,
         INebiusService nebiusService,
         CancellationToken cancellationToken) =>
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Person))
+        if (request is null)
         {
-            return Results.BadRequest(new { message = "Bitte gib den Namen einer berühmten Person an." });
+            return Results.BadRequest(new { message = "Bitte gib einen Suchbegriff an." });
         }
+
+        var type = request.Type;
 
         try
         {
-            var data = await nebiusService.GetPersonInformationAsync(request.Person, cancellationToken);
-            var response = new PersonAnalysisResponse
+            return type switch
             {
-                Person = request.Person,
-                Data = data
+                AnalysisType.Person => await HandlePersonAsync(request, nebiusService, cancellationToken),
+                AnalysisType.Country => await HandleCountryAsync(request, nebiusService, cancellationToken),
+                _ => Results.BadRequest(new { message = "Der angegebene Analysetyp wird nicht unterstützt." })
             };
-
-            return Results.Ok(response);
         }
         catch (ClientResultException ex)
         {
@@ -108,3 +114,41 @@ api.MapPost("/generate-image", async (
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+static async Task<IResult> HandlePersonAsync(AnalysisRequest request, INebiusService nebiusService, CancellationToken cancellationToken)
+{
+    var person = request.Person?.Trim();
+    if (string.IsNullOrWhiteSpace(person))
+    {
+        return Results.BadRequest(new { message = "Bitte gib den Namen einer berühmten Person an." });
+    }
+
+    var data = await nebiusService.GetPersonInformationAsync(person, cancellationToken);
+    var response = new AnalysisResponse
+    {
+        Type = AnalysisType.Person,
+        Query = person,
+        Data = data
+    };
+
+    return Results.Ok(response);
+}
+
+static async Task<IResult> HandleCountryAsync(AnalysisRequest request, INebiusService nebiusService, CancellationToken cancellationToken)
+{
+    var country = request.Country?.Trim();
+    if (string.IsNullOrWhiteSpace(country))
+    {
+        return Results.BadRequest(new { message = "Bitte gib den Namen eines Landes an." });
+    }
+
+    var data = await nebiusService.GetCountryInformationAsync(country, cancellationToken);
+    var response = new AnalysisResponse
+    {
+        Type = AnalysisType.Country,
+        Query = country,
+        Data = data
+    };
+
+    return Results.Ok(response);
+}
