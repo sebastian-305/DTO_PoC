@@ -16,7 +16,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.Configure<NebiusOptions>(builder.Configuration.GetSection("Nebius"));
 builder.Services.AddSingleton<CountrySchemaProvider>();
 builder.Services.AddSingleton<INebiusService, NebiusService>();
-builder.Services.AddHttpClient<INebiusImageService, NebiusImageService>();
+builder.Services.AddSingleton<INebiusImageService, NebiusImageService>();
 
 var app = builder.Build();
 
