@@ -110,10 +110,45 @@ body {
     font-style: italic;
 }
 
+.result-message--error {
+    color: #fda4af;
+    font-style: normal;
+    font-weight: 600;
+}
+
 .result-output--error .result-message {
     color: #fda4af;
     font-style: normal;
     font-weight: 600;
+}
+
+.result-image {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.result-image__heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #cbd5f5;
+    margin: 0;
+}
+
+.result-image__prompt {
+    color: #cbd5f5;
+    font-style: normal;
+}
+
+.result-image__preview {
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
 }
 
 .result-dictionary {
