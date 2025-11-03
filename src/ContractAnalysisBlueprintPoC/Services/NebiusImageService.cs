@@ -48,7 +48,7 @@ public sealed class NebiusImageService : INebiusImageService
 
         var generationOptions = new ImageGenerationOptions
         {
-            ResponseFormat = GeneratedImageFormat.Bytes,
+            ResponseFormat = GeneratedImageFormat.Uri,
             Size = new GeneratedImageSize(1024, 1024),
             Quality = new GeneratedImageQuality("high"),
             Style = GeneratedImageStyle.Vivid
@@ -85,6 +85,8 @@ public sealed class NebiusImageService : INebiusImageService
         {
             throw new InvalidOperationException("Die Nebius-Antwort enthält weder eine Bild-URL noch Base64-Daten.");
         }
+
+        _logger.LogDebug("URL: {url}", imageUrl);
 
         return new ImageGenerationResult
         {
