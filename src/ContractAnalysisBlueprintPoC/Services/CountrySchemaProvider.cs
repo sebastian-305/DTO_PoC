@@ -10,6 +10,11 @@ public sealed class CountrySchemaProvider
         ["additionalProperties"] = false,
         ["properties"] = new JsonObject
         {
+            ["name"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "Der offizielle Landesname."
+            },
             ["hauptstadt"] = new JsonObject
             {
                 ["type"] = "string",
@@ -19,6 +24,11 @@ public sealed class CountrySchemaProvider
             {
                 ["type"] = "string",
                 ["description"] = "Fläche des Landes inklusive Maßeinheit."
+            },
+            ["einwohner"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "Die Population mit Tausendertrennzeichen."
             },
             ["sprachen"] = new JsonObject
             {
@@ -30,7 +40,13 @@ public sealed class CountrySchemaProvider
             {
                 ["type"] = "string",
                 ["description"] = "Kontinent, auf dem das Land liegt."
-            }
+            },
+            ["kommentare"] = new JsonObject
+            {
+                ["type"] = "array",
+                ["items"] = new JsonObject { ["type"] = "string" },
+                ["description"] = "Kommentare für die korrekten Interpretation der Daten."
+            },
         },
         ["required"] = new JsonArray("hauptstadt", "einwohner", "flaeche", "sprachen", "kontinent")
     };
