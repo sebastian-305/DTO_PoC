@@ -3,6 +3,8 @@ const countryInput = document.getElementById('country-input');
 const resultOutput = document.getElementById('result-output');
 const DEFAULT_MESSAGE = 'Noch keine Analyse vorhanden.';
 
+let currentImageAbortController = null;
+
 renderMessage(DEFAULT_MESSAGE);
 
 form.addEventListener('submit', async (event) => {
@@ -14,6 +16,7 @@ form.addEventListener('submit', async (event) => {
         return;
     }
 
+    cancelImageRequest();
     setLoadingState(true);
 
     try {
@@ -41,12 +44,148 @@ form.addEventListener('submit', async (event) => {
     }
 });
 
+function cancelImageRequest() {
+    if (currentImageAbortController) {
+        currentImageAbortController.abort();
+        currentImageAbortController = null;
+    }
+}
+
 function renderResult(result) {
     resultOutput.classList.remove('result-output--message', 'result-output--error');
     resultOutput.innerHTML = '';
 
     const content = createNodeFromData(result);
     resultOutput.appendChild(content);
+
+    const prompt = result?.data?.bildPrompt;
+    if (typeof prompt === 'string' && prompt.trim()) {
+        const nodes = createImageContainer(prompt.trim());
+        resultOutput.appendChild(nodes.container);
+
+        const abortController = new AbortController();
+        currentImageAbortController = abortController;
+        triggerImageGeneration(prompt.trim(), nodes, abortController)
+            .catch((error) => {
+                if (abortController.signal.aborted) {
+                    return;
+                }
+                console.error(error);
+                renderImageError(nodes, error);
+            });
+    }
+}
+
+function triggerImageGeneration(prompt, nodes, controller) {
+    return requestImageGeneration(prompt, controller.signal)
+        .then((imageResult) => {
+            if (controller.signal.aborted) {
+                return;
+            }
+            renderImage(nodes, imageResult);
+        })
+        .catch((error) => {
+            if (controller.signal.aborted) {
+                return;
+            }
+            throw error;
+        })
+        .finally(() => {
+            if (currentImageAbortController === controller) {
+                currentImageAbortController = null;
+            }
+        });
+}
+
+async function requestImageGeneration(prompt, signal) {
+    const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt }),
+        signal
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        const message = error.detail || error.message || 'Bildgenerierung fehlgeschlagen.';
+        throw new Error(message);
+    }
+
+    return response.json();
+}
+
+function renderImage(nodes, imageResult) {
+    nodes.status.remove();
+
+    if (imageResult?.prompt) {
+        nodes.prompt.textContent = imageResult.prompt;
+    }
+
+    const source = resolveImageSource(imageResult);
+    if (!source) {
+        const fallback = document.createElement('p');
+        fallback.className = 'result-message result-message--error';
+        fallback.textContent = 'Bild konnte nicht dargestellt werden.';
+        nodes.container.appendChild(fallback);
+        return;
+    }
+
+    const img = document.createElement('img');
+    img.className = 'result-image__preview';
+    img.alt = imageResult?.prompt || 'Automatisch generiertes Bild';
+    img.src = source;
+    nodes.container.appendChild(img);
+}
+
+function renderImageError(nodes, error) {
+    nodes.status.textContent = error?.message || 'Bildgenerierung fehlgeschlagen.';
+    nodes.status.classList.add('result-message--error');
+}
+
+function createImageContainer(prompt) {
+    const container = document.createElement('section');
+    container.className = 'result-image';
+
+    const heading = document.createElement('h3');
+    heading.className = 'result-image__heading';
+    heading.textContent = 'Bildidee';
+
+    const promptNode = document.createElement('p');
+    promptNode.className = 'result-message result-image__prompt';
+    promptNode.textContent = prompt;
+
+    const status = document.createElement('p');
+    status.className = 'result-message';
+    status.textContent = 'Bild wird generiert…';
+
+    container.appendChild(heading);
+    container.appendChild(promptNode);
+    container.appendChild(status);
+
+    return {
+        container,
+        status,
+        prompt: promptNode
+    };
+}
+
+function resolveImageSource(imageResult) {
+    if (!imageResult) {
+        return null;
+    }
+
+    if (imageResult.imageUrl) {
+        return imageResult.imageUrl;
+    }
+
+    if (imageResult.imageBase64) {
+        const mediaType = imageResult.mediaType || 'image/png';
+        return `data:${mediaType};base64,${imageResult.imageBase64}`;
+    }
+
+    return null;
 }
 
 function showError(message) {

@@ -32,7 +32,7 @@ public class CountrySchemaProviderTests
         schema["additionalProperties"]!.GetValue<bool>().Should().BeFalse();
 
         var required = schema["required"]!.AsArray().Select(node => node!.GetValue<string>()).ToArray();
-        required.Should().BeEquivalentTo(new[] { "hauptstadt", "einwohner", "flaeche", "sprachen", "kontinent" });
+        required.Should().BeEquivalentTo(new[] { "hauptstadt", "einwohner", "flaeche", "sprachen", "kontinent", "bildPrompt" });
 
         var properties = schema["properties"]!.AsObject();
         properties.Should().ContainKeys(required);
@@ -54,5 +54,9 @@ public class CountrySchemaProviderTests
         einwohnerProperties.Should().ContainKeys("anzahl", "hinweis");
         einwohnerProperties["anzahl"]!["type"]!.GetValue<string>().Should().Be("number");
         einwohnerProperties["hinweis"]!["type"]!.GetValue<string>().Should().Be("string");
+
+        var bildPrompt = properties["bildPrompt"]!.AsObject();
+        bildPrompt["type"]!.GetValue<string>().Should().Be("string");
+        bildPrompt["description"]!.GetValue<string>().Should().NotBeNullOrWhiteSpace();
     }
 }
