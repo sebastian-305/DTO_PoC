@@ -45,11 +45,6 @@ public sealed class CountrySchemaProvider
                 ["type"] = "string",
                 ["description"] = "Fläche des Landes inklusive Maßeinheit."
             },
-            ["einwohner"] = new JsonObject
-            {
-                ["type"] = "string",
-                ["description"] = "Die Population mit Tausendertrennzeichen."
-            },
             ["sprachen"] = new JsonObject
             {
                 ["type"] = "array",
