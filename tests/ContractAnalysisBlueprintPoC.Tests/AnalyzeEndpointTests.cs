@@ -35,7 +35,9 @@ public class AnalyzeEndpointTests
         });
 
         using var client = factory.CreateClient();
-        var response = await client.PostAsJsonAsync("/api/analyze", new { country = "Testland" });
+        var response = await client.PostAsJsonAsync(
+            "/api/analyze",
+            new { type = "country", country = "Testland" });
 
         response.StatusCode.Should().Be((HttpStatusCode)expectedStatus);
 
@@ -53,6 +55,9 @@ public class AnalyzeEndpointTests
                 message: "Nebius request failed.",
                 response: new FakePipelineResponse(status, body));
         }
+
+        public Task<JsonObject> GetPersonInformationAsync(string person, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakePipelineResponse : PipelineResponse
