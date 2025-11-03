@@ -16,6 +16,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.Configure<NebiusOptions>(builder.Configuration.GetSection("Nebius"));
 builder.Services.AddSingleton<CountrySchemaProvider>();
 builder.Services.AddSingleton<INebiusService, NebiusService>();
+builder.Services.AddHttpClient<INebiusImageService, NebiusImageService>();
 
 var app = builder.Build();
 
@@ -68,6 +69,37 @@ api.MapPost("/analyze", async (
         {
             return Results.Problem(
                 title: "Analyse fehlgeschlagen",
+                detail: ex.Message,
+                statusCode: 500);
+        }
+    });
+
+api.MapPost("/generate-image", async (
+        ImageGenerationRequest request,
+        INebiusImageService imageService,
+        CancellationToken cancellationToken) =>
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            return Results.BadRequest(new { message = "Bitte gib einen Bild-Prompt an." });
+        }
+
+        try
+        {
+            var result = await imageService.GenerateImageAsync(request.Prompt, cancellationToken);
+            return Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.Problem(
+                title: "Bildgenerierung fehlgeschlagen",
+                detail: ex.Message,
+                statusCode: 502);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                title: "Bildgenerierung fehlgeschlagen",
                 detail: ex.Message,
                 statusCode: 500);
         }

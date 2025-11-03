@@ -20,6 +20,26 @@ public sealed class CountrySchemaProvider
                 ["type"] = "string",
                 ["description"] = "Die Hauptstadt des Landes."
             },
+            ["einwohner"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["description"] = "Aktuelle Einwohnerzahl inklusive erläuterndem Hinweis.",
+                ["additionalProperties"] = false,
+                ["properties"] = new JsonObject
+                {
+                    ["anzahl"] = new JsonObject
+                    {
+                        ["type"] = "number",
+                        ["description"] = "Geschätzte Einwohnerzahl (Zahl)."
+                    },
+                    ["hinweis"] = new JsonObject
+                    {
+                        ["type"] = "string",
+                        ["description"] = "Kurzer Kontext, z. B. Quelle oder Stand."
+                    }
+                },
+                ["required"] = new JsonArray("anzahl")
+            },
             ["flaeche"] = new JsonObject
             {
                 ["type"] = "string",
@@ -47,8 +67,13 @@ public sealed class CountrySchemaProvider
                 ["items"] = new JsonObject { ["type"] = "string" },
                 ["description"] = "Kommentare für die korrekten Interpretation der Daten."
             },
+            ["bildPrompt"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "Prägnanter Prompt für eine bildliche Darstellung (Motiv, Stil, Lichtstimmung)."
+            }
         },
-        ["required"] = new JsonArray("hauptstadt", "einwohner", "flaeche", "sprachen", "kontinent")
+        ["required"] = new JsonArray("hauptstadt", "einwohner", "flaeche", "sprachen", "kontinent", "bildPrompt")
     };
 
     public JsonObject GetSchema() => (JsonObject)_schema.DeepClone();

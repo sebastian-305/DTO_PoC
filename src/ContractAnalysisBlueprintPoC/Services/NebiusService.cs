@@ -51,12 +51,14 @@ public sealed class NebiusService : INebiusService
 
         var messages = new ChatMessage[]
         {
-    ChatMessage.CreateSystemMessage(
-        "Du bist ein zuverlässiger Geograf. Halte dich strikt an das geforderte JSON-Schema."
-    ),
-    ChatMessage.CreateUserMessage(
-        $"Analysiere das Land \"{country}\" und liefere ausschließlich Fakten im JSON-Format."
-    )
+            ChatMessage.CreateSystemMessage(
+                "Du bist ein zuverlässiger Geograf. Halte dich strikt an das geforderte JSON-Schema. " +
+                "Der Schlüssel `bildPrompt` soll einen knappen, bildtauglichen Prompt liefern, der Motiv, Stil und Lichtstimmung beschreibt."
+            ),
+            ChatMessage.CreateUserMessage(
+                $"Analysiere das Land \"{country}\" und liefere ausschließlich Fakten im JSON-Format. " +
+                "Der Eintrag `bildPrompt` soll eine inspirierende Bildbeschreibung für eine Reiseszene enthalten."
+            )
         };
 
 
