@@ -3,8 +3,6 @@ const countryInput = document.getElementById('country-input');
 const resultOutput = document.getElementById('result-output');
 const DEFAULT_MESSAGE = 'Noch keine Analyse vorhanden.';
 
-let currentImageAbortController = null;
-
 renderMessage(DEFAULT_MESSAGE);
 
 form.addEventListener('submit', async (event) => {
@@ -16,7 +14,6 @@ form.addEventListener('submit', async (event) => {
         return;
     }
 
-    cancelImageRequest();
     setLoadingState(true);
 
     try {
@@ -44,13 +41,6 @@ form.addEventListener('submit', async (event) => {
     }
 });
 
-function cancelImageRequest() {
-    if (currentImageAbortController) {
-        currentImageAbortController.abort();
-        currentImageAbortController = null;
-    }
-}
-
 function renderResult(result) {
     resultOutput.classList.remove('result-output--message', 'result-output--error');
     resultOutput.innerHTML = '';
@@ -58,62 +48,22 @@ function renderResult(result) {
     const content = createNodeFromData(result);
     resultOutput.appendChild(content);
 
-    const prompt = result?.data?.bildPrompt;
+    const imageResult = result?.image;
+    const prompt = imageResult?.prompt ?? result?.data?.bildPrompt;
+    const imageError = result?.imageError;
     if (typeof prompt === 'string' && prompt.trim()) {
-        const nodes = createImageContainer(prompt.trim());
+        const trimmedPrompt = prompt.trim();
+        const nodes = createImageContainer(trimmedPrompt);
         resultOutput.appendChild(nodes.container);
 
-        const abortController = new AbortController();
-        currentImageAbortController = abortController;
-        triggerImageGeneration(prompt.trim(), nodes, abortController)
-            .catch((error) => {
-                if (abortController.signal.aborted) {
-                    return;
-                }
-                console.error(error);
-                renderImageError(nodes, error);
-            });
-    }
-}
-
-function triggerImageGeneration(prompt, nodes, controller) {
-    return requestImageGeneration(prompt, controller.signal)
-        .then((imageResult) => {
-            if (controller.signal.aborted) {
-                return;
-            }
+        if (imageResult) {
             renderImage(nodes, imageResult);
-        })
-        .catch((error) => {
-            if (controller.signal.aborted) {
-                return;
-            }
-            throw error;
-        })
-        .finally(() => {
-            if (currentImageAbortController === controller) {
-                currentImageAbortController = null;
-            }
-        });
-}
-
-async function requestImageGeneration(prompt, signal) {
-    const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ prompt }),
-        signal
-    });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        const message = error.detail || error.message || 'Bildgenerierung fehlgeschlagen.';
-        throw new Error(message);
+        } else if (imageError) {
+            renderImageError(nodes, { message: imageError });
+        } else {
+            nodes.status.textContent = 'Kein Bild verfügbar.';
+        }
     }
-
-    return response.json();
 }
 
 function renderImage(nodes, imageResult) {

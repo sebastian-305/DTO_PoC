@@ -1,5 +1,6 @@
 using System.ClientModel;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ContractAnalysisBlueprintPoC.Models;
 using ContractAnalysisBlueprintPoC.Services;
@@ -33,6 +34,7 @@ api.MapGet("/schema", (CountrySchemaProvider provider) =>
 api.MapPost("/analyze", async (
         CountryAnalysisRequest request,
         INebiusService nebiusService,
+        INebiusImageService imageService,
         CancellationToken cancellationToken) =>
     {
         if (request is null || string.IsNullOrWhiteSpace(request.Country))
@@ -43,10 +45,32 @@ api.MapPost("/analyze", async (
         try
         {
             var data = await nebiusService.GetCountryInformationAsync(request.Country, cancellationToken);
+            ImageGenerationResult? image = null;
+            string? imageError = null;
+
+            var prompt = ExtractImagePrompt(data);
+            if (!string.IsNullOrWhiteSpace(prompt))
+            {
+                try
+                {
+                    image = await imageService.GenerateImageAsync(prompt, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    imageError = ex.Message;
+                }
+            }
+
             var response = new CountryAnalysisResponse
             {
                 Country = request.Country,
-                Data = data
+                Data = data,
+                Image = image,
+                ImageError = imageError
             };
 
             return Results.Ok(response);
@@ -74,37 +98,32 @@ api.MapPost("/analyze", async (
         }
     });
 
-api.MapPost("/generate-image", async (
-        ImageGenerationRequest request,
-        INebiusImageService imageService,
-        CancellationToken cancellationToken) =>
-    {
-        if (request is null || string.IsNullOrWhiteSpace(request.Prompt))
-        {
-            return Results.BadRequest(new { message = "Bitte gib einen Bild-Prompt an." });
-        }
-
-        try
-        {
-            var result = await imageService.GenerateImageAsync(request.Prompt, cancellationToken);
-            return Results.Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Results.Problem(
-                title: "Bildgenerierung fehlgeschlagen",
-                detail: ex.Message,
-                statusCode: 502);
-        }
-        catch (Exception ex)
-        {
-            return Results.Problem(
-                title: "Bildgenerierung fehlgeschlagen",
-                detail: ex.Message,
-                statusCode: 500);
-        }
-    });
-
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+static string? ExtractImagePrompt(JsonObject data)
+{
+    if (data is null)
+    {
+        return null;
+    }
+
+    if (!data.TryGetPropertyValue("bildPrompt", out var promptNode))
+    {
+        return null;
+    }
+
+    if (promptNode is not JsonValue jsonValue)
+    {
+        return null;
+    }
+
+    if (!jsonValue.TryGetValue<string>(out var prompt))
+    {
+        return null;
+    }
+
+    var trimmed = prompt?.Trim();
+    return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+}
