@@ -25,7 +25,6 @@ const EMPTY_MESSAGES = {
     country: 'Bitte gib den Namen eines Landes an.'
 };
 
-let currentImageAbortController = null;
 let currentType = getSelectedType();
 
 renderMessage('Noch keine Analyse vorhanden.');
@@ -36,7 +35,6 @@ typeInputs.forEach((input) => {
         if (input.checked) {
             currentType = input.value;
             updateFormForType(currentType);
-            cancelImageRequest();
             renderMessage('Noch keine Analyse vorhanden.');
         }
     });
@@ -51,7 +49,6 @@ form.addEventListener('submit', async (event) => {
         return;
     }
 
-    cancelImageRequest();
     setLoadingState(true);
 
     const payload = { type: currentType };
@@ -100,13 +97,6 @@ function updateFormForType(type) {
     }
 }
 
-function cancelImageRequest() {
-    if (currentImageAbortController) {
-        currentImageAbortController.abort();
-        currentImageAbortController = null;
-    }
-}
-
 function renderResult(result) {
     resultOutput.classList.remove('result-output--message', 'result-output--error');
     resultOutput.innerHTML = '';
@@ -119,21 +109,11 @@ function renderResult(result) {
     const content = createNodeFromData(result?.data ?? result);
     resultOutput.appendChild(content);
 
-    const prompt = result?.data?.bildPrompt;
-    if (typeof prompt === 'string' && prompt.trim()) {
-        const nodes = createImageContainer(prompt.trim());
+    const prompt = extractPrompt(result);
+    if (prompt) {
+        const nodes = createImageContainer(prompt);
         resultOutput.appendChild(nodes.container);
-
-        const abortController = new AbortController();
-        currentImageAbortController = abortController;
-        triggerImageGeneration(prompt.trim(), nodes, abortController)
-            .catch((error) => {
-                if (abortController.signal.aborted) {
-                    return;
-                }
-                console.error(error);
-                renderImageError(nodes, error);
-            });
+        renderImageSection(nodes, result?.image, result?.imageError);
     }
 }
 
@@ -144,71 +124,73 @@ function formatType(type) {
     return 'Person';
 }
 
-function triggerImageGeneration(prompt, nodes, controller) {
-    return requestImageGeneration(prompt, controller.signal)
-        .then((imageResult) => {
-            if (controller.signal.aborted) {
-                return;
-            }
-            renderImage(nodes, imageResult);
-        })
-        .catch((error) => {
-            if (controller.signal.aborted) {
-                return;
-            }
-            throw error;
-        })
-        .finally(() => {
-            if (currentImageAbortController === controller) {
-                currentImageAbortController = null;
-            }
-        });
-}
+function extractPrompt(result) {
+    const prompt = result?.image?.prompt
+        ?? result?.data?.bildPrompt
+        ?? result?.data?.bildprompt;
 
-async function requestImageGeneration(prompt, signal) {
-    const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ prompt }),
-        signal
-    });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        const message = error.detail || error.message || 'Bildgenerierung fehlgeschlagen.';
-        throw new Error(message);
+    if (typeof prompt === 'string') {
+        const trimmed = prompt.trim();
+        return trimmed.length > 0 ? trimmed : '';
     }
 
-    return response.json();
+    return '';
+}
+
+function renderImageSection(nodes, imageResult, imageError) {
+    const rendered = renderImage(nodes, imageResult);
+    if (rendered) {
+        return;
+    }
+
+    if (imageError) {
+        renderImageError(nodes, imageError);
+        return;
+    }
+
+    if (nodes.status) {
+        nodes.status.remove();
+    }
+
+    const fallback = document.createElement('p');
+    fallback.className = 'result-message result-message--error';
+    fallback.textContent = 'Bild konnte nicht dargestellt werden.';
+    nodes.container.appendChild(fallback);
 }
 
 function renderImage(nodes, imageResult) {
-    nodes.status.remove();
+    if (!nodes || !imageResult) {
+        return false;
+    }
 
-    if (imageResult?.prompt) {
+    if (imageResult.prompt) {
         nodes.prompt.textContent = imageResult.prompt;
     }
 
     const source = resolveImageSource(imageResult);
     if (!source) {
-        const fallback = document.createElement('p');
-        fallback.className = 'result-message result-message--error';
-        fallback.textContent = 'Bild konnte nicht dargestellt werden.';
-        nodes.container.appendChild(fallback);
-        return;
+        return false;
+    }
+
+    if (nodes.status) {
+        nodes.status.remove();
     }
 
     const img = document.createElement('img');
     img.className = 'result-image__preview';
-    img.alt = imageResult?.prompt || 'Automatisch generiertes Bild';
+    img.alt = imageResult.prompt || 'Automatisch generiertes Bild';
     img.src = source;
     nodes.container.appendChild(img);
+
+    return true;
 }
 
-function renderImageError(nodes, error) {
-    nodes.status.textContent = error?.message || 'Bildgenerierung fehlgeschlagen.';
+function renderImageError(nodes, message) {
+    if (!nodes?.status) {
+        return;
+    }
+
+    nodes.status.textContent = message || 'Bildgenerierung fehlgeschlagen.';
     nodes.status.classList.add('result-message--error');
 }
 
@@ -226,7 +208,7 @@ function createImageContainer(prompt) {
 
     const status = document.createElement('p');
     status.className = 'result-message';
-    status.textContent = 'Bild wird generiert…';
+    status.textContent = 'Bild wird vorbereitet…';
 
     container.appendChild(heading);
     container.appendChild(promptNode);

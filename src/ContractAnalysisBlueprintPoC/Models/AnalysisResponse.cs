@@ -9,4 +9,8 @@ public sealed class AnalysisResponse
     public required string Query { get; init; }
 
     public required JsonObject Data { get; init; }
+
+    public ImageGenerationResult? Image { get; init; }
+
+    public string? ImageError { get; init; }
 }
