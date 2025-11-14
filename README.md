@@ -5,12 +5,12 @@ Diese Anwendung demonstriert eine minimalistische End-to-End-Integration zwische
 ## Architekturüberblick
 
 - **Backend (.NET 8 Minimal API)**
-  - Endpunkt `POST /api/analyze` nimmt den gewünschten Analysetyp (`person` oder `country`) entgegen und beauftragt die Nebius-API mit einer entsprechenden Analyse.
+  - Endpunkt `POST /api/analyze` nimmt den gewünschten Analysetyp (`person` oder `country`) entgegen, nutzt das passende JSON-Schema und generiert auf Basis des Structured Outputs direkt auch die Bildvorschau.
   - Endpunkt `GET /api/schema` stellt das aktuell verwendete JSON-Schema bereit und akzeptiert optional den Query-Parameter `type`.
   - Die Schemata lassen sich zentral in `PersonSchemaProvider` und `CountrySchemaProvider` anpassen und werden für den Structured-Output-Call verwendet.
 - **Frontend (Vanilla JS)**
-  - Eine Umschaltung erlaubt die Auswahl zwischen Personen- und Länderanalyse, anschließend wird der Suchbegriff an das Backend übermittelt.
-  - Die Antwort wird formatiert als JSON angezeigt und bei vorhandenen Bild-Prompts um eine Bildgenerierung ergänzt.
+  - Eine Umschaltung erlaubt die Auswahl zwischen Personen- und Länderanalyse, anschließend wird der Suchbegriff per einzigem API-Call an das Backend übermittelt.
+  - Die Antwort wird formatiert als JSON angezeigt und inkludiert – sofern vorhanden – direkt die generierte Bildvorschau inklusive Prompt.
 
 ## Projekt lokal starten
 

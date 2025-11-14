@@ -9,6 +9,7 @@ using System.Text.Json.Nodes;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ContractAnalysisBlueprintPoC.Models;
 using ContractAnalysisBlueprintPoC.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +32,7 @@ public class AnalyzeEndpointTests
             builder.ConfigureServices(services =>
             {
                 services.AddSingleton<INebiusService>(new ThrowingNebiusService(expectedStatus, upstreamBody));
+                services.AddSingleton<INebiusImageService>(new FakeImageService());
             });
         });
 
@@ -45,6 +47,17 @@ public class AnalyzeEndpointTests
         problem.Should().NotBeNull();
         problem!.Status.Should().Be(expectedStatus);
         problem.Detail.Should().Contain(upstreamBody);
+    }
+
+    private sealed class FakeImageService : INebiusImageService
+    {
+        public Task<ImageGenerationResult> GenerateImageAsync(string prompt, CancellationToken cancellationToken = default)
+            => Task.FromResult(new ImageGenerationResult
+            {
+                Prompt = prompt,
+                ImageUrl = "https://example.test/image.png",
+                MediaType = "image/png"
+            });
     }
 
     private sealed class ThrowingNebiusService(int status, string body) : INebiusService

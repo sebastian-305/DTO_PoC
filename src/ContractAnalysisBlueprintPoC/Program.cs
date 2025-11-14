@@ -1,5 +1,6 @@
 using System.ClientModel;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ContractAnalysisBlueprintPoC.Models;
 using ContractAnalysisBlueprintPoC.Services;
@@ -39,6 +40,7 @@ api.MapGet("/schema", (AnalysisType? type, PersonSchemaProvider personProvider, 
 api.MapPost("/analyze", async (
         AnalysisRequest request,
         INebiusService nebiusService,
+        INebiusImageService imageService,
         CancellationToken cancellationToken) =>
     {
         if (request is null)
@@ -52,8 +54,8 @@ api.MapPost("/analyze", async (
         {
             return type switch
             {
-                AnalysisType.Person => await HandlePersonAsync(request, nebiusService, cancellationToken),
-                AnalysisType.Country => await HandleCountryAsync(request, nebiusService, cancellationToken),
+                AnalysisType.Person => await HandlePersonAsync(request, nebiusService, imageService, cancellationToken),
+                AnalysisType.Country => await HandleCountryAsync(request, nebiusService, imageService, cancellationToken),
                 _ => Results.BadRequest(new { message = "Der angegebene Analysetyp wird nicht unterstützt." })
             };
         }
@@ -80,42 +82,15 @@ api.MapPost("/analyze", async (
         }
     });
 
-api.MapPost("/generate-image", async (
-        ImageGenerationRequest request,
-        INebiusImageService imageService,
-        CancellationToken cancellationToken) =>
-    {
-        if (request is null || string.IsNullOrWhiteSpace(request.Prompt))
-        {
-            return Results.BadRequest(new { message = "Bitte gib einen Bild-Prompt an." });
-        }
-
-        try
-        {
-            var result = await imageService.GenerateImageAsync(request.Prompt, cancellationToken);
-            return Results.Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Results.Problem(
-                title: "Bildgenerierung fehlgeschlagen",
-                detail: ex.Message,
-                statusCode: 502);
-        }
-        catch (Exception ex)
-        {
-            return Results.Problem(
-                title: "Bildgenerierung fehlgeschlagen",
-                detail: ex.Message,
-                statusCode: 500);
-        }
-    });
-
 app.MapFallbackToFile("index.html");
 
 app.Run();
 
-static async Task<IResult> HandlePersonAsync(AnalysisRequest request, INebiusService nebiusService, CancellationToken cancellationToken)
+static async Task<IResult> HandlePersonAsync(
+    AnalysisRequest request,
+    INebiusService nebiusService,
+    INebiusImageService imageService,
+    CancellationToken cancellationToken)
 {
     var person = request.Person?.Trim();
     if (string.IsNullOrWhiteSpace(person))
@@ -124,17 +99,24 @@ static async Task<IResult> HandlePersonAsync(AnalysisRequest request, INebiusSer
     }
 
     var data = await nebiusService.GetPersonInformationAsync(person, cancellationToken);
+    var (image, imageError) = await TryGenerateImageAsync(data, imageService, cancellationToken);
     var response = new AnalysisResponse
     {
         Type = AnalysisType.Person,
         Query = person,
-        Data = data
+        Data = data,
+        Image = image,
+        ImageError = imageError
     };
 
     return Results.Ok(response);
 }
 
-static async Task<IResult> HandleCountryAsync(AnalysisRequest request, INebiusService nebiusService, CancellationToken cancellationToken)
+static async Task<IResult> HandleCountryAsync(
+    AnalysisRequest request,
+    INebiusService nebiusService,
+    INebiusImageService imageService,
+    CancellationToken cancellationToken)
 {
     var country = request.Country?.Trim();
     if (string.IsNullOrWhiteSpace(country))
@@ -143,12 +125,68 @@ static async Task<IResult> HandleCountryAsync(AnalysisRequest request, INebiusSe
     }
 
     var data = await nebiusService.GetCountryInformationAsync(country, cancellationToken);
+    var (image, imageError) = await TryGenerateImageAsync(data, imageService, cancellationToken);
     var response = new AnalysisResponse
     {
         Type = AnalysisType.Country,
         Query = country,
-        Data = data
+        Data = data,
+        Image = image,
+        ImageError = imageError
     };
 
     return Results.Ok(response);
+}
+
+static async Task<(ImageGenerationResult? Image, string? Error)> TryGenerateImageAsync(
+    JsonObject data,
+    INebiusImageService imageService,
+    CancellationToken cancellationToken)
+{
+    if (imageService is null || data is null)
+    {
+        return (null, null);
+    }
+
+    var prompt = ExtractPrompt(data);
+    if (string.IsNullOrWhiteSpace(prompt))
+    {
+        return (null, null);
+    }
+
+    try
+    {
+        var image = await imageService.GenerateImageAsync(prompt, cancellationToken);
+        return (image, null);
+    }
+    catch (OperationCanceledException)
+    {
+        throw;
+    }
+    catch (InvalidOperationException ex)
+    {
+        return (null, ex.Message);
+    }
+    catch (Exception)
+    {
+        return (null, "Bildgenerierung fehlgeschlagen.");
+    }
+}
+
+static string? ExtractPrompt(JsonObject data)
+{
+    if (data.TryGetPropertyValue("bildPrompt", out var promptNode))
+    {
+        return promptNode?.GetValue<string>();
+    }
+
+    foreach (var property in data)
+    {
+        if (string.Equals(property.Key, "bildPrompt", StringComparison.OrdinalIgnoreCase))
+        {
+            return property.Value?.GetValue<string>();
+        }
+    }
+
+    return null;
 }
