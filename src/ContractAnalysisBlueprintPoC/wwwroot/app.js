@@ -304,9 +304,10 @@ function createDictionaryNode(object, context = {}) {
         const displayLabel = fieldMeta?.label ?? formatKeyForDisplay(key);
         term.textContent = displayLabel;
 
+        const tooltipText = typeof fieldMeta?.tooltip === 'string' ? fieldMeta.tooltip.trim() : '';
         const hint = typeof fieldMeta?.hint === 'string' ? fieldMeta.hint.trim() : '';
-        const tooltip = hint ? `${displayLabel} – ${hint}` : displayLabel;
-        term.title = tooltip;
+        const hoverText = tooltipText || hint;
+        term.title = hoverText ? `${displayLabel} – ${hoverText}` : displayLabel;
 
         const description = document.createElement('dd');
         const childContext = {
@@ -475,12 +476,16 @@ function buildMetadataFromSchema(schema) {
         const ui = definition['x-ui'] || {};
         const label = typeof ui.label === 'string' ? ui.label : formatKeyForDisplay(key);
         const hint = typeof ui.hint === 'string' ? ui.hint : definition.description;
+        const tooltip = typeof ui.tooltip === 'string'
+            ? ui.tooltip
+            : (typeof hint === 'string' ? hint : definition.description);
         const order = typeof ui.order === 'number' ? ui.order : Number.MAX_SAFE_INTEGER;
         const variant = typeof ui.variant === 'string' ? ui.variant : null;
 
         metadata[key] = {
             label,
             hint,
+            tooltip,
             order,
             variant
         };

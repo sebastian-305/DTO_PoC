@@ -19,7 +19,8 @@ public sealed class CountrySchemaProvider
                     ["label"] = "Land",
                     ["order"] = 10,
                     ["variant"] = "highlight",
-                    ["hint"] = "Offizieller oder gebräuchlicher Name bzw. Eigenbezeichnung."
+                    ["hint"] = "Offizieller oder gebräuchlicher Name bzw. Eigenbezeichnung.",
+                    ["tooltip"] = "Name des Landes, so wie er üblich verwendet wird."
                 }
             },
             ["hauptstadt"] = new JsonObject
@@ -31,7 +32,8 @@ public sealed class CountrySchemaProvider
                     ["label"] = "Hauptstadt",
                     ["order"] = 20,
                     ["variant"] = "highlight",
-                    ["hint"] = "Politisches Zentrum oder Regierungssitz."
+                    ["hint"] = "Politisches Zentrum oder Regierungssitz.",
+                    ["tooltip"] = "Name der Hauptstadt beziehungsweise des Regierungssitzes."
                 }
             },
             ["einwohnerzahl"] = new JsonObject
@@ -43,7 +45,8 @@ public sealed class CountrySchemaProvider
                     ["label"] = "Einwohnerzahl",
                     ["order"] = 30,
                     ["variant"] = "stat",
-                    ["hint"] = "Bitte die Zahl zusammen mit dem Referenzjahr nennen."
+                    ["hint"] = "Bitte die Zahl zusammen mit dem Referenzjahr nennen.",
+                    ["tooltip"] = "Aktuelle oder letzte bekannte Bevölkerungszahl inklusive Jahr."
                 }
             },
             ["flaeche"] = new JsonObject
@@ -55,7 +58,8 @@ public sealed class CountrySchemaProvider
                     ["label"] = "Fläche",
                     ["order"] = 40,
                     ["variant"] = "stat",
-                    ["hint"] = "Bitte gerundete Fläche in km² angeben."
+                    ["hint"] = "Bitte gerundete Fläche in km² angeben.",
+                    ["tooltip"] = "Fläche des Landes in Quadratkilometern."
                 }
             },
             ["amtssprachen"] = new JsonObject
@@ -68,7 +72,8 @@ public sealed class CountrySchemaProvider
                     ["label"] = "Amtssprachen",
                     ["order"] = 50,
                     ["variant"] = "pill-list",
-                    ["hint"] = "Mehrere Sprachen bitte als Liste ausgeben."
+                    ["hint"] = "Mehrere Sprachen bitte als Liste ausgeben.",
+                    ["tooltip"] = "Liste der offiziellen Amtssprachen."
                 }
             },
             ["kontinent"] = new JsonObject
@@ -78,7 +83,8 @@ public sealed class CountrySchemaProvider
                 ["x-ui"] = new JsonObject
                 {
                     ["label"] = "Kontinent",
-                    ["order"] = 60
+                    ["order"] = 60,
+                    ["tooltip"] = "Kontinent, auf dem das Land überwiegend liegt."
                 }
             },
             ["staatsform"] = new JsonObject
@@ -89,7 +95,8 @@ public sealed class CountrySchemaProvider
                 {
                     ["label"] = "Staatsform",
                     ["order"] = 70,
-                    ["hint"] = "Z. B. parlamentarische Republik oder konstitutionelle Monarchie."
+                    ["hint"] = "Z. B. parlamentarische Republik oder konstitutionelle Monarchie.",
+                    ["tooltip"] = "Beschreibt die Staats- oder Regierungsform."
                 }
             },
             ["kurzbeschreibung"] = new JsonObject
@@ -100,7 +107,8 @@ public sealed class CountrySchemaProvider
                 {
                     ["label"] = "Kurzbeschreibung",
                     ["order"] = 80,
-                    ["hint"] = "Knapp die wichtigsten Besonderheiten hervorheben."
+                    ["hint"] = "Knapp die wichtigsten Besonderheiten hervorheben.",
+                    ["tooltip"] = "Kurze Zusammenfassung der wichtigsten Merkmale des Landes."
                 }
             },
             ["bildPrompt"] = new JsonObject
@@ -112,7 +120,8 @@ public sealed class CountrySchemaProvider
                     ["label"] = "Bildidee",
                     ["order"] = 90,
                     ["variant"] = "muted",
-                    ["hint"] = "Knackiger Prompt, der der Bild-KI als Vorlage dient."
+                    ["hint"] = "Knackiger Prompt, der der Bild-KI als Vorlage dient.",
+                    ["tooltip"] = "Prompt, der ein typisches Motiv des Landes für die Bild-KI beschreibt."
                 }
             }
         },
