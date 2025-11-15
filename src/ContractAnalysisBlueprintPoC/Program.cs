@@ -27,9 +27,9 @@ app.UseStaticFiles();
 
 var api = app.MapGroup("/api");
 
-api.MapGet("/schema", (AnalysisType? type, PersonSchemaProvider personProvider, CountrySchemaProvider countryProvider) =>
+api.MapGet("/schema", (string? type, PersonSchemaProvider personProvider, CountrySchemaProvider countryProvider) =>
     {
-        var target = type ?? AnalysisType.Person;
+        var target = ParseAnalysisType(type);
         var schema = target == AnalysisType.Country
             ? countryProvider.GetSchema()
             : personProvider.GetSchema();
@@ -85,6 +85,21 @@ api.MapPost("/analyze", async (
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+static AnalysisType ParseAnalysisType(string? type)
+{
+    if (string.IsNullOrWhiteSpace(type))
+    {
+        return AnalysisType.Person;
+    }
+
+    if (Enum.TryParse<AnalysisType>(type, ignoreCase: true, out var parsed))
+    {
+        return parsed;
+    }
+
+    return AnalysisType.Person;
+}
 
 static async Task<IResult> HandlePersonAsync(
     AnalysisRequest request,
