@@ -50,13 +50,16 @@ public class PersonSchemaProviderTests
         nameUi["label"]!.GetValue<string>().Should().Be("Person");
         nameUi["order"]!.GetValue<int>().Should().Be(10);
         nameUi["variant"]!.GetValue<string>().Should().Be("highlight");
+        nameUi["tooltip"]!.GetValue<string>().Should().Contain("Name");
 
         var worksUi = GetUi(properties, "bekannteWerke");
         worksUi["variant"]!.GetValue<string>().Should().Be("pill-list");
+        worksUi["tooltip"]!.GetValue<string>().Should().Contain("Werke");
 
         var promptUi = GetUi(properties, "bildPrompt");
         promptUi["variant"]!.GetValue<string>().Should().Be("muted");
         promptUi["order"]!.GetValue<int>().Should().Be(90);
+        promptUi["tooltip"]!.GetValue<string>().Should().Contain("Prompt");
     }
 
     private static JsonObject GetUi(JsonObject properties, string key)

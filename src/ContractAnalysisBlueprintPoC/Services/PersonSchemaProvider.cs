@@ -19,7 +19,8 @@ public sealed class PersonSchemaProvider
                     ["label"] = "Person",
                     ["order"] = 10,
                     ["variant"] = "highlight",
-                    ["hint"] = "Vor- und Nachname bzw. Künstlername."
+                    ["hint"] = "Vor- und Nachname bzw. Künstlername.",
+                    ["tooltip"] = "Voller Name oder Künstlername, wie er im Text erscheinen soll."
                 }
             },
             ["geburtsdatum"] = new JsonObject
@@ -31,7 +32,8 @@ public sealed class PersonSchemaProvider
                     ["label"] = "Geburtsdatum",
                     ["order"] = 20,
                     ["variant"] = "stat",
-                    ["hint"] = "Datum vollständig nennen, alternativ Jahr."
+                    ["hint"] = "Datum vollständig nennen, alternativ Jahr.",
+                    ["tooltip"] = "Geburtsdatum im Format Tag. Monat Jahr oder zumindest das Jahr."
                 }
             },
             ["geburtsort"] = new JsonObject
@@ -42,7 +44,8 @@ public sealed class PersonSchemaProvider
                 {
                     ["label"] = "Geburtsort",
                     ["order"] = 30,
-                    ["hint"] = "Bitte Stadt und Land kombinieren."
+                    ["hint"] = "Bitte Stadt und Land kombinieren.",
+                    ["tooltip"] = "Ort und Land, an dem die Person geboren wurde."
                 }
             },
             ["nationalitaet"] = new JsonObject
@@ -54,7 +57,8 @@ public sealed class PersonSchemaProvider
                     ["label"] = "Nationalität",
                     ["order"] = 40,
                     ["variant"] = "highlight",
-                    ["hint"] = "Wichtigste Staatsangehörigkeit oder kulturelle Zugehörigkeit."
+                    ["hint"] = "Wichtigste Staatsangehörigkeit oder kulturelle Zugehörigkeit.",
+                    ["tooltip"] = "Primäre Staatsangehörigkeit oder kulturelle Zugehörigkeit."
                 }
             },
             ["haupttaetigkeit"] = new JsonObject
@@ -65,7 +69,8 @@ public sealed class PersonSchemaProvider
                 {
                     ["label"] = "Haupttätigkeit",
                     ["order"] = 50,
-                    ["hint"] = "Rolle oder Berufsbezeichnung prägnant beschreiben."
+                    ["hint"] = "Rolle oder Berufsbezeichnung prägnant beschreiben.",
+                    ["tooltip"] = "Kernberuf bzw. Rolle, für die die Person bekannt ist."
                 }
             },
             ["bekannteWerke"] = new JsonObject
@@ -78,7 +83,8 @@ public sealed class PersonSchemaProvider
                     ["label"] = "Bekannte Werke",
                     ["order"] = 60,
                     ["variant"] = "pill-list",
-                    ["hint"] = "Wichtige Werke oder Leistungen als Liste, gerne inklusive Jahr."
+                    ["hint"] = "Wichtige Werke oder Leistungen als Liste, gerne inklusive Jahr.",
+                    ["tooltip"] = "Liste prägender Werke, Projekte oder Leistungen mit Jahresangabe."
                 }
             },
             ["auszeichnungen"] = new JsonObject
@@ -91,7 +97,8 @@ public sealed class PersonSchemaProvider
                     ["label"] = "Auszeichnungen",
                     ["order"] = 70,
                     ["variant"] = "pill-list",
-                    ["hint"] = "Relevante Preise oder Ehrungen inkl. Jahr, wenn möglich."
+                    ["hint"] = "Relevante Preise oder Ehrungen inkl. Jahr, wenn möglich.",
+                    ["tooltip"] = "Wichtige Preise oder Ehrungen samt Jahr."
                 }
             },
             ["kurzbiografie"] = new JsonObject
@@ -102,7 +109,8 @@ public sealed class PersonSchemaProvider
                 {
                     ["label"] = "Kurzbiografie",
                     ["order"] = 80,
-                    ["hint"] = "In wenigen Sätzen Lebenslauf und Bedeutung skizzieren."
+                    ["hint"] = "In wenigen Sätzen Lebenslauf und Bedeutung skizzieren.",
+                    ["tooltip"] = "Kurze Zusammenfassung der wichtigsten Stationen und Bedeutung."
                 }
             },
             ["bildPrompt"] = new JsonObject
@@ -114,7 +122,8 @@ public sealed class PersonSchemaProvider
                     ["label"] = "Bildidee",
                     ["order"] = 90,
                     ["variant"] = "muted",
-                    ["hint"] = "Prompt mit Namen, Erscheinungsbild, Outfit und Stimmung für die Bild-KI."
+                    ["hint"] = "Prompt mit Namen, Erscheinungsbild, Outfit und Stimmung für die Bild-KI.",
+                    ["tooltip"] = "Prompt, der Name, Aussehen, Kleidung und Stimmung für die Bild-KI beschreibt."
                 }
             }
         },
