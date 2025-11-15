@@ -25,6 +25,8 @@ const EMPTY_MESSAGES = {
     country: 'Bitte gib den Namen eines Landes an.'
 };
 
+const schemaMetadataCache = new Map();
+
 let currentType = getSelectedType();
 
 renderMessage('Noch keine Analyse vorhanden.');
@@ -75,7 +77,7 @@ form.addEventListener('submit', async (event) => {
         }
 
         const result = await response.json();
-        renderResult(result);
+        await renderResult(result);
     } catch (error) {
         console.error(error);
         showError('Die Anfrage konnte nicht gesendet werden.');
@@ -97,7 +99,7 @@ function updateFormForType(type) {
     }
 }
 
-function renderResult(result) {
+async function renderResult(result) {
     resultOutput.classList.remove('result-output--message', 'result-output--error');
     resultOutput.innerHTML = '';
 
@@ -106,7 +108,9 @@ function renderResult(result) {
     meta.textContent = `Typ: ${formatType(result?.type)} – Anfrage: ${result?.query ?? 'unbekannt'}`;
     resultOutput.appendChild(meta);
 
-    const content = createNodeFromData(result?.data ?? result);
+    const normalizedType = normalizeType(result?.type ?? currentType);
+    const metadata = await getSchemaMetadata(normalizedType);
+    const content = createNodeFromData(result?.data ?? result, { metadata });
     resultOutput.appendChild(content);
 
     const prompt = extractPrompt(result);
@@ -261,19 +265,19 @@ function renderMessage(message, { isError = false } = {}) {
     resultOutput.appendChild(paragraph);
 }
 
-function createNodeFromData(data) {
+function createNodeFromData(data, context = {}) {
     if (Array.isArray(data)) {
-        return createListNode(data);
+        return createListNode(data, context);
     }
 
     if (data !== null && typeof data === 'object') {
-        return createDictionaryNode(data);
+        return createDictionaryNode(data, context);
     }
 
-    return createValueNode(data);
+    return createValueNode(data, context.fieldMeta);
 }
 
-function createDictionaryNode(object) {
+function createDictionaryNode(object, context = {}) {
     const entries = Object.entries(object);
 
     if (entries.length === 0) {
@@ -283,12 +287,31 @@ function createDictionaryNode(object) {
     const container = document.createElement('dl');
     container.className = 'result-dictionary';
 
-    entries.forEach(([key, value]) => {
+    const metadata = context.metadata || null;
+    const orderedEntries = metadata
+        ? [...entries].sort((a, b) => {
+            const metaA = metadata[a[0]];
+            const metaB = metadata[b[0]];
+            const orderA = typeof metaA?.order === 'number' ? metaA.order : Number.MAX_SAFE_INTEGER;
+            const orderB = typeof metaB?.order === 'number' ? metaB.order : Number.MAX_SAFE_INTEGER;
+            return orderA - orderB;
+        })
+        : entries;
+
+    orderedEntries.forEach(([key, value]) => {
+        const fieldMeta = metadata?.[key];
         const term = document.createElement('dt');
-        term.textContent = key;
+        term.textContent = fieldMeta?.label ?? formatKeyForDisplay(key);
+        if (fieldMeta?.hint) {
+            term.title = fieldMeta.hint;
+        }
 
         const description = document.createElement('dd');
-        description.appendChild(createNodeFromData(value));
+        const childContext = {
+            metadata: fieldMeta?.children,
+            fieldMeta
+        };
+        description.appendChild(createNodeFromData(value, childContext));
 
         container.appendChild(term);
         container.appendChild(description);
@@ -297,9 +320,14 @@ function createDictionaryNode(object) {
     return container;
 }
 
-function createListNode(items) {
+function createListNode(items, context = {}) {
     if (items.length === 0) {
         return createMessageNode('Keine Werte.');
+    }
+
+    const fieldMeta = context.fieldMeta;
+    if (fieldMeta?.variant === 'pill-list') {
+        return createPillList(items);
     }
 
     const list = document.createElement('ol');
@@ -314,19 +342,23 @@ function createListNode(items) {
     return list;
 }
 
-function createValueNode(value) {
+function createValueNode(value, fieldMeta) {
     const span = document.createElement('span');
     span.className = 'result-value';
 
-    if (value === null || value === undefined || value === '') {
-        span.textContent = 'Keine Daten';
-    } else if (typeof value === 'number') {
-        span.textContent = value.toLocaleString('de-DE');
-    } else if (typeof value === 'boolean') {
-        span.textContent = value ? 'Ja' : 'Nein';
-    } else {
-        span.textContent = String(value);
+    if (fieldMeta?.variant === 'highlight') {
+        span.classList.add('result-value--highlight');
     }
+
+    if (fieldMeta?.variant === 'stat') {
+        span.classList.add('result-value--stat');
+    }
+
+    if (fieldMeta?.variant === 'muted') {
+        span.classList.add('result-value--muted');
+    }
+
+    span.textContent = formatPrimitiveValue(value);
 
     return span;
 }
@@ -336,4 +368,121 @@ function createMessageNode(text) {
     wrapper.className = 'result-message';
     wrapper.textContent = text;
     return wrapper;
+}
+
+function createPillList(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+        return createMessageNode('Keine Werte.');
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'result-pill-list';
+
+    items.forEach((item) => {
+        const pill = document.createElement('span');
+        pill.className = 'result-value result-value--pill';
+        pill.textContent = formatPrimitiveValue(item);
+        wrapper.appendChild(pill);
+    });
+
+    return wrapper;
+}
+
+function formatPrimitiveValue(value) {
+    if (value === null || value === undefined || value === '') {
+        return 'Keine Daten';
+    }
+
+    if (typeof value === 'number') {
+        return value.toLocaleString('de-DE');
+    }
+
+    if (typeof value === 'boolean') {
+        return value ? 'Ja' : 'Nein';
+    }
+
+    return String(value);
+}
+
+function formatKeyForDisplay(key) {
+    if (typeof key !== 'string' || key.length === 0) {
+        return '';
+    }
+
+    const withSpaces = key
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/_/g, ' ')
+        .trim();
+
+    return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
+}
+
+function normalizeType(type) {
+    if (typeof type === 'string') {
+        const lowered = type.toLowerCase();
+        return lowered === 'country' ? 'country' : 'person';
+    }
+
+    if (typeof type === 'number') {
+        return type === 1 ? 'country' : 'person';
+    }
+
+    return 'person';
+}
+
+async function getSchemaMetadata(type) {
+    const normalized = normalizeType(type);
+    if (schemaMetadataCache.has(normalized)) {
+        return schemaMetadataCache.get(normalized);
+    }
+
+    try {
+        const schema = await fetchSchema(normalized);
+        const metadata = buildMetadataFromSchema(schema);
+        schemaMetadataCache.set(normalized, metadata);
+        return metadata;
+    } catch (error) {
+        console.error('Schema konnte nicht geladen werden:', error);
+        schemaMetadataCache.set(normalized, null);
+        return null;
+    }
+}
+
+async function fetchSchema(type) {
+    const search = type ? `?type=${encodeURIComponent(type)}` : '';
+    const response = await fetch(`/api/schema${search}`);
+    if (!response.ok) {
+        throw new Error(`Schema-Request fehlgeschlagen (${response.status})`);
+    }
+
+    return response.json();
+}
+
+function buildMetadataFromSchema(schema) {
+    const properties = schema?.properties;
+    if (!properties || typeof properties !== 'object') {
+        return null;
+    }
+
+    const metadata = {};
+    Object.entries(properties).forEach(([key, definition]) => {
+        if (!definition || typeof definition !== 'object') {
+            return;
+        }
+
+        const ui = definition['x-ui'] || {};
+        const label = typeof ui.label === 'string' ? ui.label : formatKeyForDisplay(key);
+        const hint = typeof ui.hint === 'string' ? ui.hint : definition.description;
+        const order = typeof ui.order === 'number' ? ui.order : Number.MAX_SAFE_INTEGER;
+        const variant = typeof ui.variant === 'string' ? ui.variant : null;
+
+        metadata[key] = {
+            label,
+            hint,
+            order,
+            variant
+        };
+    });
+
+    return metadata;
 }
