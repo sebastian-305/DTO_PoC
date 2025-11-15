@@ -36,10 +36,11 @@ public sealed class NebiusService : INebiusService
                 Endpoint = options.Endpoint,
                 NetworkTimeout = TimeSpan.FromMinutes(10)
             });
-        _logger.LogDebug("Endpoint:");
-        _logger.LogDebug(options.Endpoint.ToString());
-        _logger.LogDebug(options.Model);
-        _logger.LogDebug(options.ApiKey);
+        _logger.LogDebug(
+            "Nebius client configured. Endpoint: {Endpoint}, Model: {Model}, Key gesetzt: {KeySet}",
+            options.Endpoint,
+            options.Model,
+            !string.IsNullOrWhiteSpace(options.ApiKey));
     }
 
     public async Task<JsonObject> GetPersonInformationAsync(string person, CancellationToken cancellationToken = default)
