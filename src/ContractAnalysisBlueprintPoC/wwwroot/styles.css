@@ -240,6 +240,39 @@ body {
     color: #f8fafc;
 }
 
+.result-value--highlight {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.25), rgba(125, 211, 252, 0.45));
+    color: #0f172a;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.result-value--stat {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: #fcd34d;
+    background: rgba(250, 204, 21, 0.15);
+}
+
+.result-value--muted {
+    background: transparent;
+    color: #94a3b8;
+    font-style: italic;
+    padding: 0;
+}
+
+.result-pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.result-value--pill {
+    background: rgba(96, 165, 250, 0.25);
+    border: 1px solid rgba(96, 165, 250, 0.4);
+}
+
 .result-output * + .result-dictionary,
 .result-output * + .result-list {
     margin-top: 0.5rem;
