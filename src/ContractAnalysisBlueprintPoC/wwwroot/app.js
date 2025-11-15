@@ -301,10 +301,12 @@ function createDictionaryNode(object, context = {}) {
     orderedEntries.forEach(([key, value]) => {
         const fieldMeta = metadata?.[key];
         const term = document.createElement('dt');
-        term.textContent = fieldMeta?.label ?? formatKeyForDisplay(key);
-        if (fieldMeta?.hint) {
-            term.title = fieldMeta.hint;
-        }
+        const displayLabel = fieldMeta?.label ?? formatKeyForDisplay(key);
+        term.textContent = displayLabel;
+
+        const hint = typeof fieldMeta?.hint === 'string' ? fieldMeta.hint.trim() : '';
+        const tooltip = hint ? `${displayLabel} – ${hint}` : displayLabel;
+        term.title = tooltip;
 
         const description = document.createElement('dd');
         const childContext = {
