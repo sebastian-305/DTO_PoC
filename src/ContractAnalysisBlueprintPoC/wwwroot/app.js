@@ -336,9 +336,15 @@ function createListNode(items, context = {}) {
     const list = document.createElement('ol');
     list.className = 'result-list';
 
+    const childMetadata = fieldMeta?.children || context.metadata;
+
     items.forEach((item) => {
         const listItem = document.createElement('li');
-        listItem.appendChild(createNodeFromData(item));
+        const childContext = {
+            metadata: childMetadata,
+            fieldMeta: null
+        };
+        listItem.appendChild(createNodeFromData(item, childContext));
         list.appendChild(listItem);
     });
 
@@ -462,34 +468,71 @@ async function fetchSchema(type) {
 }
 
 function buildMetadataFromSchema(schema) {
-    const properties = schema?.properties;
+    return buildChildrenMetadata(schema);
+}
+
+function buildChildrenMetadata(definition) {
+    const properties = definition?.properties;
     if (!properties || typeof properties !== 'object') {
         return null;
     }
 
     const metadata = {};
-    Object.entries(properties).forEach(([key, definition]) => {
-        if (!definition || typeof definition !== 'object') {
-            return;
+    Object.entries(properties).forEach(([key, propertyDefinition]) => {
+        const fieldMeta = buildFieldMetadata(key, propertyDefinition);
+        if (fieldMeta) {
+            metadata[key] = fieldMeta;
         }
-
-        const ui = definition['x-ui'] || {};
-        const label = typeof ui.label === 'string' ? ui.label : formatKeyForDisplay(key);
-        const hint = typeof ui.hint === 'string' ? ui.hint : definition.description;
-        const tooltip = typeof ui.tooltip === 'string'
-            ? ui.tooltip
-            : (typeof hint === 'string' ? hint : definition.description);
-        const order = typeof ui.order === 'number' ? ui.order : Number.MAX_SAFE_INTEGER;
-        const variant = typeof ui.variant === 'string' ? ui.variant : null;
-
-        metadata[key] = {
-            label,
-            hint,
-            tooltip,
-            order,
-            variant
-        };
     });
 
-    return metadata;
+    return Object.keys(metadata).length > 0 ? metadata : null;
+}
+
+function buildFieldMetadata(key, definition) {
+    if (!definition || typeof definition !== 'object') {
+        return null;
+    }
+
+    const ui = definition['x-ui'] || {};
+    const label = typeof ui.label === 'string' ? ui.label : formatKeyForDisplay(key);
+    const hint = typeof ui.hint === 'string' ? ui.hint : definition.description;
+    const tooltip = typeof ui.tooltip === 'string'
+        ? ui.tooltip
+        : (typeof hint === 'string' ? hint : definition.description);
+    const order = typeof ui.order === 'number' ? ui.order : Number.MAX_SAFE_INTEGER;
+    const variant = typeof ui.variant === 'string' ? ui.variant : null;
+
+    const fieldMeta = {
+        label,
+        hint,
+        tooltip,
+        order,
+        variant
+    };
+
+    const children = resolveChildrenMetadata(definition);
+    if (children) {
+        fieldMeta.children = children;
+    }
+
+    return fieldMeta;
+}
+
+function resolveChildrenMetadata(definition) {
+    if (!definition || typeof definition !== 'object') {
+        return null;
+    }
+
+    if (definition.type === 'object' || typeof definition.properties === 'object') {
+        return buildChildrenMetadata(definition);
+    }
+
+    if (definition.type === 'array' || definition.items) {
+        const itemsDefinition = Array.isArray(definition.items)
+            ? definition.items[0]
+            : definition.items;
+        return resolveChildrenMetadata(itemsDefinition);
+    }
+
+    return null;
 }
