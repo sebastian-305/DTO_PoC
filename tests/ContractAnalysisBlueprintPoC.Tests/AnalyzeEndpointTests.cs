@@ -49,6 +49,31 @@ public class AnalyzeEndpointTests
         problem.Detail.Should().Contain(upstreamBody);
     }
 
+    [Fact]
+    public async Task Analyze_WhenPromptMissesCountryName_AppendsQueryBeforeImageGeneration()
+    {
+        const string country = "Testland";
+        var recorder = new RecordingImageService();
+
+        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.AddSingleton<INebiusService>(new FixedCountryNebiusService());
+                services.AddSingleton<INebiusImageService>(recorder);
+            });
+        });
+
+        using var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync(
+            "/api/analyze",
+            new { type = "country", country });
+
+        response.EnsureSuccessStatusCode();
+        recorder.LastPrompt.Should().NotBeNull();
+        recorder.LastPrompt.Should().Contain(country);
+    }
+
     private sealed class FakeImageService : INebiusImageService
     {
         public Task<ImageGenerationResult> GenerateImageAsync(string prompt, CancellationToken cancellationToken = default)
@@ -60,6 +85,22 @@ public class AnalyzeEndpointTests
             });
     }
 
+    private sealed class RecordingImageService : INebiusImageService
+    {
+        public string? LastPrompt { get; private set; }
+
+        public Task<ImageGenerationResult> GenerateImageAsync(string prompt, CancellationToken cancellationToken = default)
+        {
+            LastPrompt = prompt;
+            return Task.FromResult(new ImageGenerationResult
+            {
+                Prompt = prompt,
+                ImageUrl = "https://example.test/recorded.png",
+                MediaType = "image/png"
+            });
+        }
+    }
+
     private sealed class ThrowingNebiusService(int status, string body) : INebiusService
     {
         public Task<JsonObject> GetCountryInformationAsync(string country, CancellationToken cancellationToken = default)
@@ -67,6 +108,22 @@ public class AnalyzeEndpointTests
             throw new ClientResultException(
                 message: "Nebius request failed.",
                 response: new FakePipelineResponse(status, body));
+        }
+
+        public Task<JsonObject> GetPersonInformationAsync(string person, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+    }
+
+    private sealed class FixedCountryNebiusService : INebiusService
+    {
+        public Task<JsonObject> GetCountryInformationAsync(string country, CancellationToken cancellationToken = default)
+        {
+            var data = new JsonObject
+            {
+                ["bildPrompt"] = "Pulsierende Altstadt mit engen Gassen und bunten Märkten"
+            };
+
+            return Task.FromResult(data);
         }
 
         public Task<JsonObject> GetPersonInformationAsync(string person, CancellationToken cancellationToken = default)

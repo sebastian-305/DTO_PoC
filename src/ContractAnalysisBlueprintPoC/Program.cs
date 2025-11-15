@@ -27,9 +27,9 @@ app.UseStaticFiles();
 
 var api = app.MapGroup("/api");
 
-api.MapGet("/schema", (AnalysisType? type, PersonSchemaProvider personProvider, CountrySchemaProvider countryProvider) =>
+api.MapGet("/schema", (string? type, PersonSchemaProvider personProvider, CountrySchemaProvider countryProvider) =>
     {
-        var target = type ?? AnalysisType.Person;
+        var target = ParseAnalysisType(type);
         var schema = target == AnalysisType.Country
             ? countryProvider.GetSchema()
             : personProvider.GetSchema();
@@ -86,6 +86,21 @@ app.MapFallbackToFile("index.html");
 
 app.Run();
 
+static AnalysisType ParseAnalysisType(string? type)
+{
+    if (string.IsNullOrWhiteSpace(type))
+    {
+        return AnalysisType.Person;
+    }
+
+    if (Enum.TryParse<AnalysisType>(type, ignoreCase: true, out var parsed))
+    {
+        return parsed;
+    }
+
+    return AnalysisType.Person;
+}
+
 static async Task<IResult> HandlePersonAsync(
     AnalysisRequest request,
     INebiusService nebiusService,
@@ -99,7 +114,12 @@ static async Task<IResult> HandlePersonAsync(
     }
 
     var data = await nebiusService.GetPersonInformationAsync(person, cancellationToken);
-    var (image, imageError) = await TryGenerateImageAsync(data, imageService, cancellationToken);
+    var (image, imageError) = await TryGenerateImageAsync(
+        data,
+        imageService,
+        person,
+        AnalysisType.Person,
+        cancellationToken);
     var response = new AnalysisResponse
     {
         Type = AnalysisType.Person,
@@ -125,7 +145,12 @@ static async Task<IResult> HandleCountryAsync(
     }
 
     var data = await nebiusService.GetCountryInformationAsync(country, cancellationToken);
-    var (image, imageError) = await TryGenerateImageAsync(data, imageService, cancellationToken);
+    var (image, imageError) = await TryGenerateImageAsync(
+        data,
+        imageService,
+        country,
+        AnalysisType.Country,
+        cancellationToken);
     var response = new AnalysisResponse
     {
         Type = AnalysisType.Country,
@@ -141,6 +166,8 @@ static async Task<IResult> HandleCountryAsync(
 static async Task<(ImageGenerationResult? Image, string? Error)> TryGenerateImageAsync(
     JsonObject data,
     INebiusImageService imageService,
+    string query,
+    AnalysisType analysisType,
     CancellationToken cancellationToken)
 {
     if (imageService is null || data is null)
@@ -149,6 +176,7 @@ static async Task<(ImageGenerationResult? Image, string? Error)> TryGenerateImag
     }
 
     var prompt = ExtractPrompt(data);
+    prompt = EnsureQueryInPrompt(prompt, query, analysisType);
     if (string.IsNullOrWhiteSpace(prompt))
     {
         return (null, null);
@@ -189,4 +217,26 @@ static string? ExtractPrompt(JsonObject data)
     }
 
     return null;
+}
+
+static string? EnsureQueryInPrompt(string? prompt, string? query, AnalysisType analysisType)
+{
+    if (string.IsNullOrWhiteSpace(prompt) || string.IsNullOrWhiteSpace(query))
+    {
+        return prompt;
+    }
+
+    if (prompt.Contains(query, StringComparison.OrdinalIgnoreCase))
+    {
+        return prompt;
+    }
+
+    var trimmedPrompt = prompt.TrimEnd();
+    var needsDot = !trimmedPrompt.EndsWith('.') && !trimmedPrompt.EndsWith('!');
+    var separator = needsDot ? ". " : " ";
+    var addition = analysisType == AnalysisType.Country
+        ? $"Szene, die klar {query} repräsentiert."
+        : $"Porträt von {query}.";
+
+    return string.Concat(trimmedPrompt, separator, addition);
 }
