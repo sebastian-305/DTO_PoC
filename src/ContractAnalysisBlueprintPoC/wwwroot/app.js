@@ -1,20 +1,62 @@
 const form = document.getElementById('analysis-form');
-const countryInput = document.getElementById('country-input');
+const typeInputs = Array.from(form.querySelectorAll('input[name="analysis-type"]'));
+const queryInput = document.getElementById('query-input');
+const queryLabel = form.querySelector('label[for="query-input"]');
 const resultOutput = document.getElementById('result-output');
-const DEFAULT_MESSAGE = 'Noch keine Analyse vorhanden.';
+const schemaHint = document.getElementById('schema-hint');
 
-renderMessage(DEFAULT_MESSAGE);
+const PLACEHOLDER = {
+    person: 'z.\u00a0B. Marie Curie',
+    country: 'z.\u00a0B. Portugal'
+};
+
+const HINTS = {
+    person: 'Das Schema liefert biografische Daten inklusive Kurzbiografie, Auszeichnungen, Werken und Bild-Prompt.',
+    country: 'Das Schema liefert Fakten zu Hauptstadt, Einwohnerzahl, Amtssprachen, Staatsform, Kurzbeschreibung und Bild-Prompt.'
+};
+
+const LABELS = {
+    person: 'Berühmte Person',
+    country: 'Land'
+};
+
+const EMPTY_MESSAGES = {
+    person: 'Bitte gib den Namen einer berühmten Person an.',
+    country: 'Bitte gib den Namen eines Landes an.'
+};
+
+let currentType = getSelectedType();
+
+renderMessage('Noch keine Analyse vorhanden.');
+updateFormForType(currentType);
+
+typeInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+        if (input.checked) {
+            currentType = input.value;
+            updateFormForType(currentType);
+            renderMessage('Noch keine Analyse vorhanden.');
+        }
+    });
+});
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const country = countryInput.value.trim();
-    if (!country) {
-        showError('Bitte gib den Namen eines Landes an.');
+    const query = queryInput.value.trim();
+    if (!query) {
+        showError(EMPTY_MESSAGES[currentType]);
         return;
     }
 
     setLoadingState(true);
+
+    const payload = { type: currentType };
+    if (currentType === 'person') {
+        payload.person = query;
+    } else {
+        payload.country = query;
+    }
 
     try {
         const response = await fetch('/api/analyze', {
@@ -22,12 +64,13 @@ form.addEventListener('submit', async (event) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ country })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ detail: 'Unbekannter Fehler.' }));
-            showError(error.detail || error.message || 'Analyse konnte nicht durchgeführt werden.');
+            const detail = error.detail || error.message;
+            showError(detail || EMPTY_MESSAGES[currentType]);
             return;
         }
 
@@ -41,56 +84,113 @@ form.addEventListener('submit', async (event) => {
     }
 });
 
+function getSelectedType() {
+    const selected = typeInputs.find((input) => input.checked);
+    return selected ? selected.value : 'person';
+}
+
+function updateFormForType(type) {
+    queryInput.placeholder = PLACEHOLDER[type];
+    schemaHint.textContent = HINTS[type];
+    if (queryLabel) {
+        queryLabel.textContent = LABELS[type];
+    }
+}
+
 function renderResult(result) {
     resultOutput.classList.remove('result-output--message', 'result-output--error');
     resultOutput.innerHTML = '';
 
-    const content = createNodeFromData(result);
+    const meta = document.createElement('p');
+    meta.className = 'result-meta';
+    meta.textContent = `Typ: ${formatType(result?.type)} – Anfrage: ${result?.query ?? 'unbekannt'}`;
+    resultOutput.appendChild(meta);
+
+    const content = createNodeFromData(result?.data ?? result);
     resultOutput.appendChild(content);
 
-    const imageResult = result?.image;
-    const prompt = imageResult?.prompt ?? result?.data?.bildPrompt;
-    const imageError = result?.imageError;
-    if (typeof prompt === 'string' && prompt.trim()) {
-        const trimmedPrompt = prompt.trim();
-        const nodes = createImageContainer(trimmedPrompt);
+    const prompt = extractPrompt(result);
+    if (prompt) {
+        const nodes = createImageContainer(prompt);
         resultOutput.appendChild(nodes.container);
-
-        if (imageResult) {
-            renderImage(nodes, imageResult);
-        } else if (imageError) {
-            renderImageError(nodes, { message: imageError });
-        } else {
-            nodes.status.textContent = 'Kein Bild verfügbar.';
-        }
+        renderImageSection(nodes, result?.image, result?.imageError);
     }
 }
 
-function renderImage(nodes, imageResult) {
-    nodes.status.remove();
+function formatType(type) {
+    if (typeof type === 'string' && type.toLowerCase() === 'country') {
+        return 'Land';
+    }
+    return 'Person';
+}
 
-    if (imageResult?.prompt) {
+function extractPrompt(result) {
+    const prompt = result?.image?.prompt
+        ?? result?.data?.bildPrompt
+        ?? result?.data?.bildprompt;
+
+    if (typeof prompt === 'string') {
+        const trimmed = prompt.trim();
+        return trimmed.length > 0 ? trimmed : '';
+    }
+
+    return '';
+}
+
+function renderImageSection(nodes, imageResult, imageError) {
+    const rendered = renderImage(nodes, imageResult);
+    if (rendered) {
+        return;
+    }
+
+    if (imageError) {
+        renderImageError(nodes, imageError);
+        return;
+    }
+
+    if (nodes.status) {
+        nodes.status.remove();
+    }
+
+    const fallback = document.createElement('p');
+    fallback.className = 'result-message result-message--error';
+    fallback.textContent = 'Bild konnte nicht dargestellt werden.';
+    nodes.container.appendChild(fallback);
+}
+
+function renderImage(nodes, imageResult) {
+    if (!nodes || !imageResult) {
+        return false;
+    }
+
+    if (imageResult.prompt) {
         nodes.prompt.textContent = imageResult.prompt;
     }
 
     const source = resolveImageSource(imageResult);
     if (!source) {
-        const fallback = document.createElement('p');
-        fallback.className = 'result-message result-message--error';
-        fallback.textContent = 'Bild konnte nicht dargestellt werden.';
-        nodes.container.appendChild(fallback);
-        return;
+        return false;
+    }
+
+    if (nodes.status) {
+        nodes.status.remove();
     }
 
     const img = document.createElement('img');
     img.className = 'result-image__preview';
-    img.alt = imageResult?.prompt || 'Automatisch generiertes Bild';
+    img.alt = imageResult.prompt || 'Automatisch generiertes Bild';
     img.src = source;
     nodes.container.appendChild(img);
+
+    return true;
 }
 
-function renderImageError(nodes, error) {
-    nodes.status.textContent = error?.message || 'Bildgenerierung fehlgeschlagen.';
+function renderImageError(nodes, message) {
+    if (!nodes?.status) {
+        return;
+    }
+
+    nodes.status.textContent = message || 'Bildgenerierung fehlgeschlagen.';
     nodes.status.classList.add('result-message--error');
 }
 
@@ -108,7 +208,7 @@ function createImageContainer(prompt) {
 
     const status = document.createElement('p');
     status.className = 'result-message';
-    status.textContent = 'Bild wird generiert…';
+    status.textContent = 'Bild wird vorbereitet…';
 
     container.appendChild(heading);
     container.appendChild(promptNode);

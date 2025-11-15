@@ -13,62 +13,59 @@ public sealed class CountrySchemaProvider
             ["name"] = new JsonObject
             {
                 ["type"] = "string",
-                ["description"] = "Der offizielle Landesname."
+                ["description"] = "Offizieller oder gebräuchlicher Name des Landes."
             },
             ["hauptstadt"] = new JsonObject
             {
                 ["type"] = "string",
-                ["description"] = "Die Hauptstadt des Landes."
+                ["description"] = "Name der Hauptstadt."
             },
-            ["einwohner"] = new JsonObject
+            ["einwohnerzahl"] = new JsonObject
             {
-                ["type"] = "object",
-                ["description"] = "Aktuelle Einwohnerzahl inklusive erläuterndem Hinweis.",
-                ["additionalProperties"] = false,
-                ["properties"] = new JsonObject
-                {
-                    ["anzahl"] = new JsonObject
-                    {
-                        ["type"] = "number",
-                        ["description"] = "Geschätzte Einwohnerzahl (Zahl)."
-                    },
-                    ["hinweis"] = new JsonObject
-                    {
-                        ["type"] = "string",
-                        ["description"] = "Kurzer Kontext, z. B. Quelle oder Stand."
-                    }
-                },
-                ["required"] = new JsonArray("anzahl")
+                ["type"] = "string",
+                ["description"] = "Aktuelle oder zuletzt verfügbare Einwohnerzahl mit Jahr."
             },
             ["flaeche"] = new JsonObject
             {
                 ["type"] = "string",
-                ["description"] = "Fläche des Landes inklusive Maßeinheit."
+                ["description"] = "Fläche in Quadratkilometern mit optionaler Quelle."
             },
-            ["sprachen"] = new JsonObject
+            ["amtssprachen"] = new JsonObject
             {
                 ["type"] = "array",
                 ["items"] = new JsonObject { ["type"] = "string" },
-                ["description"] = "Wichtige Amtssprachen und verbreitete Sprachen."
+                ["description"] = "Liste der Amtssprachen."
             },
             ["kontinent"] = new JsonObject
             {
                 ["type"] = "string",
                 ["description"] = "Kontinent, auf dem das Land liegt."
             },
-            ["kommentare"] = new JsonObject
+            ["staatsform"] = new JsonObject
             {
-                ["type"] = "array",
-                ["items"] = new JsonObject { ["type"] = "string" },
-                ["description"] = "Kommentare für die korrekten Interpretation der Daten."
+                ["type"] = "string",
+                ["description"] = "Aktuelle Staats- oder Regierungsform."
+            },
+            ["kurzbeschreibung"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "Zusammenfassung der geografischen, wirtschaftlichen oder kulturellen Besonderheiten in 3–4 Sätzen."
             },
             ["bildPrompt"] = new JsonObject
             {
                 ["type"] = "string",
-                ["description"] = "Prägnanter Prompt für eine bildliche Darstellung (Motiv, Stil, Lichtstimmung)."
+                ["description"] = "Szenische Beschreibung eines typischen Motivs, das das Land visuell repräsentiert."
             }
         },
-        ["required"] = new JsonArray("hauptstadt", "einwohner", "flaeche", "sprachen", "kontinent", "bildPrompt")
+        ["required"] = new JsonArray(
+            "name",
+            "hauptstadt",
+            "einwohnerzahl",
+            "flaeche",
+            "amtssprachen",
+            "kontinent",
+            "kurzbeschreibung",
+            "bildPrompt")
     };
 
     public JsonObject GetSchema() => (JsonObject)_schema.DeepClone();
